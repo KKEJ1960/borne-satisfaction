@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Accès — Hôtel Président</title>
+  <script src="/vendor/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #f5f0e8 0%, #ede8dc 100%);
+      min-height: 100dvh;
+      color: #1e293b;
+    }
+    .header {
+      background: #071b36;
+      color: #fff;
+      text-align: center;
+      padding: 18px 16px;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      text-align: center;
+    }
+    h1 { color: #071b36; font-size: 1.45rem; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 0.92rem; line-height: 1.5; margin-bottom: 16px; }
+    .alert-ip {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      text-align: left;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .alert-ip strong { display: block; margin-bottom: 4px; }
+    .qr-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px 20px;
+      box-shadow: 0 12px 40px rgba(7, 27, 54, 0.12);
+      border: 2px solid rgba(7, 27, 54, 0.12);
+      margin-bottom: 20px;
+      min-height: 320px;
+    }
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 280px;
+      margin-bottom: 14px;
+    }
+    #qrcode img, #qrcode canvas { display: block !important; margin: 0 auto; }
+    .url-display {
+      word-break: break-all;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #071b36;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .status {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    .status.err { color: #b91c1c; font-weight: 600; }
+    .config { text-align: left; margin-bottom: 16px; }
+    .config label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .config input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+    }
+    .hint { font-size: 0.8rem; color: #64748b; margin-top: 8px; line-height: 1.45; }
+    .detected {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #ecfdf5;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #166534;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+    button, .btn-link {
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      border: none;
+    }
+    .btn-primary { background: #071b36; color: #fff; }
+    .btn-secondary { background: #fff; color: #071b36; border: 2px solid #071b36; }
+    .steps {
+      text-align: left;
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      border: 1px solid rgba(7, 27, 54, 0.08);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #475569;
+    }
+    .steps h2 { color: #071b36; font-size: 1rem; margin-bottom: 10px; }
+    .steps ol { padding-left: 1.2rem; }
+    .steps li { margin-bottom: 6px; }
+    @media print {
+      body { background: #fff; }
+      .config, .actions, .hint, .alert-ip, .detected, .status { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">Hôtel Président Yamoussoukro</header>
+  <main class="wrap">
+    <h1>Porte d'entrée — QR Code</h1>
+    <p class="subtitle">Scannez ou saisissez le lien pour accéder au formulaire de satisfaction.</p>
+
+    <div class="alert-ip">
+      <strong>Wi‑Fi : adresse IP changeante</strong>
+      Chaque matin : lancez <code>ipconfig</code> (carte Wi‑Fi), démarrez <code>npm start</code>,
+      ouvrez cette page avec la nouvelle adresse (ex. <code>http://11.11.83.23:5175/acces.html</code>),
+      puis <strong>Mettre à jour le QR</strong> et réimprimez l'affiche.
+    </div>
+
+    <div class="qr-box">
+      <div id="qrcode" aria-label="Code QR"></div>
+      <p class="url-display" id="url-text">Chargement…</p>
+      <p class="status" id="status-msg"></p>
+    </div>
+
+    <div class="config">
+      <label for="app-url">Lien de l'application (IP + port affiché par Vite)</label>
+      <input type="text" id="app-url" placeholder="http://11.11.83.23:5175" autocomplete="off" />
+      <p class="hint">
+        Le <strong>port</strong> peut être 5173, 5174 ou 5175 si d'autres programmes l'utilisent.
+        Regardez la ligne <em>Network</em> dans le terminal après <code>npm start</code>.
+      </p>
+      <p class="detected" id="detected-line" hidden></p>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="btn-generate">Mettre à jour le QR</button>
+      <button type="button" class="btn-secondary" id="btn-print">Imprimer l'affiche</button>
+      <a href="/" class="btn-link btn-secondary" id="btn-open">Ouvrir l'application</a>
+    </div>
+
+    <section class="steps">
+      <h2>Routine quotidienne</h2>
+      <ol>
+        <li><code>npm start</code> dans <code>borne-satisfaction</code></li>
+        <li>Noter l'IP Wi‑Fi et le port (terminal Vite)</li>
+        <li>Ouvrir <code>/acces.html</code> avec cette adresse → Mettre à jour le QR</li>
+        <li>Imprimer — le téléphone client doit être sur le même Wi‑Fi</li>
+      </ol>
+    </section>
+  </main>
+  <script>
+    const input = document.getElementById('app-url');
+    const qrEl = document.getElementById('qrcode');
+    const urlText = document.getElementById('url-text');
+    const statusMsg = document.getElementById('status-msg');
+    const openBtn = document.getElementById('btn-open');
+    const detectedLine = document.getElementById('detected-line');
+    let qrInstance = null;
+
+    function getDefaultUrl() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('url')) return params.get('url').trim();
+      const o = window.location;
+      if (o.origin && o.origin !== 'null' && !o.protocol.startsWith('file')) {
+        return o.origin;
+      }
+      return '';
+    }
+
+    function normalizeUrl(raw) {
+      let url = (raw || '').trim();
+      if (!url) return null;
+      if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+      try {
+        const u = new URL(url);
+        return u.origin;
+      } catch {
+        return null;
+      }
+    }
+
+    function setStatus(msg, isError) {
+      statusMsg.textContent = msg || '';
+      statusMsg.className = 'status' + (isError ? ' err' : '');
+    }
+
+    function generateQR() {
+      const url = normalizeUrl(input.value) || normalizeUrl(getDefaultUrl());
+      if (!url) {
+        urlText.textContent = 'Saisissez une adresse valide ci-dessus';
+        setStatus('Exemple : http://11.11.83.23:5175', true);
+        return;
+      }
+
+      input.value = url;
+      openBtn.href = url;
+      urlText.textContent = url;
+
+      if (typeof QRCode === 'undefined') {
+        setStatus('Erreur : fichier QR local manquant (/vendor/qrcode.min.js)', true);
+        return;
+      }
+
+      try {
+        qrEl.innerHTML = '';
+        qrInstance = new QRCode(qrEl, {
+          text: url,
+          width: 260,
+          height: 260,
+          colorDark: '#071b36',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        setStatus('QR prêt — vous pouvez imprimer.');
+      } catch (e) {
+        console.error(e);
+        setStatus('Erreur lors de la création du QR : ' + e.message, true);
+      }
+    }
+
+    const detected = getDefaultUrl();
+    if (detected) {
+      input.value = detected;
+      detectedLine.hidden = false;
+      detectedLine.textContent =
+        'Adresse détectée depuis cette page : ' + detected +
+        ' (port ' + (window.location.port || '80') + ')';
+    }
+
+    if (typeof QRCode === 'undefined') {
+      urlText.textContent = 'Bibliothèque QR non chargée';
+      setStatus('Rechargez la page ou vérifiez /vendor/qrcode.min.js', true);
+    } else {
+      generateQR();
+    }
+
+    document.getElementById('btn-generate').addEventListener('click', generateQR);
+    document.getElementById('btn-print').addEventListener('click', () => window.print());
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') generateQR(); });
+  </script>
+</body>
+</html>

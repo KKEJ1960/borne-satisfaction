@@ -1,0 +1,30 @@
+{
+  "name": "borne-satisfaction",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/start-dev.cjs",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "setup": "cd backend && npm run setup",
+    "install-deps": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "qr": "cd frontend && npm run qr"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "vite": "^8.0.10"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
