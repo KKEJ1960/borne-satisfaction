@@ -32,6 +32,7 @@ function App() {
   const [done, setDone] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adminFromSuperAdmin, setAdminFromSuperAdmin] = useState(false);
   const [questions, setQuestions] = useState({});
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [allReponses, setAllReponses] = useState(initialReponsesState);
@@ -196,16 +197,25 @@ function App() {
     }
     setIsAdmin(false);
     setIsSuperAdmin(false);
+    setAdminFromSuperAdmin(false);
+  };
+
+  const handleBackToSuperAdmin = () => {
+    setIsAdmin(false);
+    setIsSuperAdmin(true);
+    setAdminFromSuperAdmin(false);
   };
 
   const handleAdminTrigger = () => {
     setIsAdmin(true);
     setIsSuperAdmin(false);
+    setAdminFromSuperAdmin(false);
   };
 
   const handleSuperAdminTrigger = () => {
     setIsSuperAdmin(true);
     setIsAdmin(false);
+    setAdminFromSuperAdmin(false);
   };
 
   const handleSkipCategory = () => {
@@ -300,10 +310,14 @@ function App() {
           onOpenHotelDashboard={() => {
             setIsSuperAdmin(false);
             setIsAdmin(true);
+            setAdminFromSuperAdmin(true);
           }}
         />
       ) : isAdmin ? (
-        <Dashboard onBack={handleLogout} onQuestionsChanged={setQuestions} />
+        <Dashboard
+          onBack={adminFromSuperAdmin ? handleBackToSuperAdmin : handleLogout}
+          onQuestionsChanged={setQuestions}
+        />
       ) : !client ? (
         <ClientForm
           onClientIdentified={setClient}

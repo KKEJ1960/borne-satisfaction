@@ -420,8 +420,8 @@ app.post("/admin/questions", requireAdmin, async (req, res) => {
       actif: true,
     });
   } catch (error) {
-    logger.error({ err: error.message }, "Erreur POST /admin/questions");
-    res.status(500).json({ error: "Erreur serveur" });
+    logger.error({ err: error.message, stack: error.stack }, "Erreur POST /admin/questions");
+    res.status(500).json({ error: process.env.NODE_ENV !== "production" ? (error.message || "Erreur serveur") : "Erreur serveur" });
   }
 });
 
@@ -466,8 +466,8 @@ app.put("/admin/questions/:id", requireAdmin, async (req, res) => {
     });
     res.json({ id: q.id, categorie: q.categorie, texte: q.texte, ordre: q.ordre, actif: !!q.actif });
   } catch (error) {
-    logger.error({ err: error.message }, "Erreur PUT /admin/questions");
-    res.status(500).json({ error: "Erreur serveur" });
+    logger.error({ err: error.message, stack: error.stack }, "Erreur PUT /admin/questions");
+    res.status(500).json({ error: process.env.NODE_ENV !== "production" ? (error.message || "Erreur serveur") : "Erreur serveur" });
   }
 });
 
@@ -486,8 +486,8 @@ app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
     });
     res.json({ success: true, id: Number(id), actif: false });
   } catch (error) {
-    logger.error({ err: error.message }, "Erreur DELETE /admin/questions");
-    res.status(500).json({ error: "Erreur serveur" });
+    logger.error({ err: error.message, stack: error.stack }, "Erreur DELETE /admin/questions");
+    res.status(500).json({ error: process.env.NODE_ENV !== "production" ? (error.message || "Erreur serveur") : "Erreur serveur" });
   }
 });
 

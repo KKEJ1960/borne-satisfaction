@@ -250,8 +250,8 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
         <div className={`admin-toast admin-toast--${toast.type}`}>{toast.message}</div>
       )}
 
-      <div className="admin-toolbar">
-        <div className="admin-tabs">
+      <div className="admin-toolbar superadmin-toolbar">
+        <div className="admin-tabs superadmin-tabs">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -260,22 +260,24 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
               onClick={() => setTab(t.id)}
             >
               <t.icon size={16} />
-              {t.label}
+              <span className="admin-tab-label">{t.label}</span>
             </button>
           ))}
         </div>
-        <button type="button" className="admin-btn admin-btn-outline" onClick={onOpenHotelDashboard}>
-          <LayoutDashboard size={16} />
-          Vue Dashboard hôtel
-        </button>
-        <button
-          type="button"
-          className="admin-btn admin-btn-outline"
-          onClick={() => onLogout?.()}
-        >
-          <LogOut size={16} />
-          Déconnexion
-        </button>
+        <div className="superadmin-toolbar-actions">
+          <button type="button" className="admin-btn admin-btn-outline" onClick={onOpenHotelDashboard}>
+            <LayoutDashboard size={16} />
+            <span className="admin-tab-label">Dashboard hôtel</span>
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn-outline admin-btn-danger-outline"
+            onClick={() => onLogout?.()}
+          >
+            <LogOut size={16} />
+            <span className="admin-tab-label">Déconnexion</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (

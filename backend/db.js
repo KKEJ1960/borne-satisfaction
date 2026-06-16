@@ -16,6 +16,10 @@ try {
   const dbPassword = process.env.DB_PASSWORD ?? "";
   const dbName = process.env.DB_NAME || "hotel_satisfaction";
 
+  if (!dbPassword) {
+    console.warn("⚠️  DB_PASSWORD est vide — connexion sans mot de passe (dev uniquement)");
+  }
+
   console.log("🔌 Tentative de connexion à la base de données...");
   console.log("📊 Configuration:", {
     host: dbHost,
@@ -31,8 +35,10 @@ try {
     database: dbName,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0,
-    charset: 'utf8mb4'
+    queueLimit: 10,
+    charset: "UTF8MB4_UNICODE_CI",
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
   });
 
   // Test de connexion

@@ -239,6 +239,12 @@ export default function SynthesePage({
                 <p>{client.numero_chambre}</p>
               </div>
             )}
+            {client?.email && (
+              <div>
+                <span className="synthese-label">Email</span>
+                <p>{client.email}</p>
+              </div>
+            )}
           </div>
         </section>
 

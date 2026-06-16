@@ -430,13 +430,17 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
             </button>
           </>
         )}
-        <button type="button" className="admin-btn admin-btn-outline" onClick={onBack}>
+        <button
+          type="button"
+          className="admin-btn admin-btn-back"
+          onClick={activeTab === "questions" ? () => setActiveTab("stats") : onBack}
+        >
           <ArrowLeft size={16} />
           Retour
         </button>
         {lastUpdate && activeTab === "stats" && (
           <span className="admin-last-update">
-            MAJ {lastUpdate.toLocaleTimeString("fr-FR")}
+            ⏱ MAJ {lastUpdate.toLocaleTimeString("fr-FR")}
           </span>
         )}
       </div>

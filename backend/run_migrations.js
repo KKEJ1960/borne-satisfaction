@@ -30,15 +30,17 @@ async function tableExists(conn, table) {
 }
 
 async function main() {
+  const DB_NAME = process.env.DB_NAME || "hotel_satisfaction";
   const conn = await mysql.createConnection({
     host: (process.env.DB_HOST || "localhost").replace(/^@+/, ""),
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD ?? "",
-    database: process.env.DB_NAME || "hotel_satisfaction",
+    database: DB_NAME,
     multipleStatements: true,
+    charset: "utf8mb4",
   });
 
-  console.log("🔌 Connecté à", process.env.DB_NAME || "hotel_satisfaction");
+  console.log("🔌 Connecté à", DB_NAME);
 
   if (!(await columnExists(conn, "avis", "archived"))) {
     await conn.query(
@@ -182,6 +184,63 @@ async function main() {
     await upsertAdmin(adminLogin, adminHash, "admin");
   } else {
     console.warn("⚠️  ADMIN_PASSWORD_HASH / ADMIN_PASSWORD manquant — admin non créé");
+  }
+
+  // ── Migration charset utf8mb4 (fix UPDATE sur caractères non-latin1) ──────
+  // Si la DB ou les tables sont en latin1 (défaut WampServer), les UPDATE
+  // avec apostrophes typographiques / caractères non-latin1 renvoient 500.
+  const ALL_TABLES = ["clients", "avis", "questions", "admins", "logs_activite"];
+
+  // Charset utf8mb4 — nécessite le privilège ALTER (root ou GRANT ALTER)
+  // Si refus, exécute le SQL manuellement dans phpMyAdmin.
+  let charsetOk = true;
+  try {
+    const [dbCharsetRows] = await conn.query(
+      `SELECT DEFAULT_CHARACTER_SET_NAME AS cs
+       FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?`,
+      [DB_NAME]
+    );
+    if (dbCharsetRows[0]?.cs !== "utf8mb4") {
+      await conn.query(`ALTER DATABASE \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+      console.log("✅ Base de données convertie en utf8mb4");
+    } else {
+      console.log("ℹ️  Base de données déjà en utf8mb4");
+    }
+
+    for (const tbl of ALL_TABLES) {
+      if (!(await tableExists(conn, tbl))) continue;
+      const [tblCharsetRows] = await conn.query(
+        `SELECT CCSA.CHARACTER_SET_NAME AS cs
+         FROM information_schema.TABLES T
+         JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
+           ON CCSA.COLLATION_NAME = T.TABLE_COLLATION
+         WHERE T.TABLE_SCHEMA = ? AND T.TABLE_NAME = ?`,
+        [DB_NAME, tbl]
+      );
+      if (tblCharsetRows[0]?.cs !== "utf8mb4") {
+        await conn.query(
+          `ALTER TABLE \`${tbl}\` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        );
+        console.log(`✅ Table ${tbl} convertie en utf8mb4`);
+      } else {
+        console.log(`ℹ️  Table ${tbl} déjà en utf8mb4`);
+      }
+    }
+  } catch (charsetErr) {
+    charsetOk = false;
+    console.warn("\n⚠️  Conversion charset échouée (privilège ALTER manquant) :");
+    console.warn("   Exécute ce SQL dans phpMyAdmin (http://localhost/phpmyadmin) :");
+    console.warn(`
+    ALTER DATABASE \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ALTER TABLE \`clients\`       CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ALTER TABLE \`avis\`          CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ALTER TABLE \`questions\`     CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ALTER TABLE \`admins\`        CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ALTER TABLE \`logs_activite\` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    `);
+  }
+  if (charsetOk) {
+    console.log("✅ Charset utf8mb4 appliqué.");
   }
 
   await conn.end();
