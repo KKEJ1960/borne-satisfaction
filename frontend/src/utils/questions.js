@@ -12,24 +12,32 @@ export function getQuestionTexts(list) {
   return (list || []).map(getQuestionText).filter(Boolean);
 }
 
+function normalizeQuestion(q, i) {
+  if (typeof q === "string") return { id: null, texte: q, ordre: i };
+  return { id: q.id ?? null, texte: q.texte, ordre: q.ordre ?? i, actif: q.actif };
+}
+
 /** Fusionne la réponse API avec le fallback ratings.js */
 export function withQuestionsFallback(apiData) {
   const result = {};
+
+  // Catégories loisirs : fallback local si l'API ne répond pas
   for (const dept of DEPARTEMENTS) {
     const list = apiData?.[dept];
     if (Array.isArray(list) && list.length > 0) {
-      result[dept] = list.map((q, i) =>
-        typeof q === "string"
-          ? { id: null, texte: q, ordre: i }
-          : { id: q.id ?? null, texte: q.texte, ordre: q.ordre ?? i, actif: q.actif }
-      );
+      result[dept] = list.map(normalizeQuestion);
     } else {
       result[dept] = (CATEGORY_QUESTIONS[dept] || []).map((texte, ordre) => ({
-        id: null,
-        texte,
-        ordre,
+        id: null, texte, ordre,
       }));
     }
   }
+
+  // Tourisme Affaires : pass-through depuis l'API, pas de fallback local
+  const affaires = apiData?.["Tourisme Affaires"];
+  result["Tourisme Affaires"] = Array.isArray(affaires)
+    ? affaires.map(normalizeQuestion)
+    : [];
+
   return result;
 }

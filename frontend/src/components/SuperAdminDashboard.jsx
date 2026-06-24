@@ -85,6 +85,7 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
   const [createForm, setCreateForm] = useState({ login: "", password: "", password2: "" });
   const [pwdModal, setPwdModal] = useState(null);
   const [pwdForm, setPwdForm] = useState({ password: "", password2: "" });
+  const [togglingId, setTogglingId] = useState(null);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -158,6 +159,14 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
   }, [logFilters.page]);
 
   const handleCreateAdmin = async () => {
+    if (!createForm.login.trim()) {
+      showToast("Le login est requis.", "error");
+      return;
+    }
+    if (createForm.password.length < 12) {
+      showToast("Le mot de passe doit contenir au minimum 12 caractères.", "error");
+      return;
+    }
     if (createForm.password !== createForm.password2) {
       showToast("Les mots de passe ne correspondent pas.", "error");
       return;
@@ -178,19 +187,26 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
   };
 
   const handleToggle = async (id) => {
+    setTogglingId(id);
     try {
       await axios.put(`${API_URL}/superadmin/admins/${id}/toggle`, null, {
         ...ADMIN_AXIOS,
         headers: authHeaders(),
       });
-      loadAdmins();
+      await loadAdmins();
       showToast("Statut mis à jour.");
     } catch (err) {
       showToast(err.response?.data?.error || "Action impossible.", "error");
+    } finally {
+      setTogglingId(null);
     }
   };
 
   const handleResetPassword = async () => {
+    if (pwdForm.password.length < 12) {
+      showToast("Le mot de passe doit contenir au minimum 12 caractères.", "error");
+      return;
+    }
     if (pwdForm.password !== pwdForm.password2) {
       showToast("Les mots de passe ne correspondent pas.", "error");
       return;
@@ -340,15 +356,20 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
 
           {tab === "admins" && (
             <div className="superadmin-admins">
-              <button
-                type="button"
-                className="admin-btn admin-btn-primary"
-                onClick={() => setCreateModal(true)}
-              >
-                <Plus size={16} />
-                Créer un admin
-              </button>
-              <div className="superadmin-table-wrap">
+              <div className="superadmin-admins-header">
+                <p className="superadmin-admins-count">{admins.length} compte{admins.length > 1 ? "s" : ""}</p>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-primary"
+                  onClick={() => setCreateModal(true)}
+                >
+                  <Plus size={16} />
+                  Créer un admin
+                </button>
+              </div>
+
+              {/* Desktop : tableau */}
+              <div className="superadmin-table-wrap superadmin-table-desktop">
                 <table className="superadmin-table">
                   <thead>
                     <tr>
@@ -362,36 +383,29 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
                   </thead>
                   <tbody>
                     {admins.map((a) => (
-                      <tr key={a.id}>
-                        <td>{a.login}</td>
-                        <td>{a.role}</td>
+                      <tr key={a.id} className={togglingId === a.id ? "sa-row-toggling" : ""}>
+                        <td><strong>{a.login}</strong></td>
                         <td>
-                          <span
-                            className={`admin-question-status${a.actif ? " is-active" : ""}`}
-                          >
+                          <span className={`sa-role-badge sa-role-badge--${a.role}`}>{a.role}</span>
+                        </td>
+                        <td>
+                          <span className={`sa-status-badge${a.actif ? " sa-status-badge--on" : ""}`}>
                             {a.actif ? "Actif" : "Bloqué"}
                           </span>
                         </td>
-                        <td>
-                          {a.date_creation
-                            ? new Date(a.date_creation).toLocaleDateString("fr-FR")
-                            : "—"}
-                        </td>
-                        <td>
-                          {a.derniere_connexion
-                            ? new Date(a.derniere_connexion).toLocaleString("fr-FR")
-                            : "—"}
-                        </td>
+                        <td>{a.date_creation ? new Date(a.date_creation).toLocaleDateString("fr-FR") : "—"}</td>
+                        <td>{a.derniere_connexion ? new Date(a.derniere_connexion).toLocaleString("fr-FR") : "—"}</td>
                         <td className="superadmin-table-actions">
                           {a.role !== "superadmin" && (
                             <>
                               <button
                                 type="button"
-                                className="admin-icon-btn"
+                                className={`admin-icon-btn${!a.actif ? "" : " admin-icon-btn-danger"}`}
                                 title={a.actif ? "Bloquer" : "Débloquer"}
+                                disabled={togglingId === a.id}
                                 onClick={() => handleToggle(a.id)}
                               >
-                                {a.actif ? <Ban size={14} /> : <CheckCircle size={14} />}
+                                {togglingId === a.id ? "…" : a.actif ? <Ban size={14} /> : <CheckCircle size={14} />}
                               </button>
                               <button
                                 type="button"
@@ -408,6 +422,39 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile : cartes */}
+              <div className="sa-admin-cards">
+                {admins.map((a) => (
+                  <div key={a.id} className={`sa-admin-card${a.actif ? "" : " sa-admin-card--blocked"}`}>
+                    <div className="sa-admin-card-top">
+                      <div className="sa-admin-card-identity">
+                        <span className="sa-admin-card-login">{a.login}</span>
+                        <span className={`sa-role-badge sa-role-badge--${a.role}`}>{a.role}</span>
+                      </div>
+                      <span className={`sa-status-badge${a.actif ? " sa-status-badge--on" : ""}`}>
+                        {a.actif ? "Actif" : "Bloqué"}
+                      </span>
+                    </div>
+                    <div className="sa-admin-card-meta">
+                      <span>Créé le {a.date_creation ? new Date(a.date_creation).toLocaleDateString("fr-FR") : "—"}</span>
+                      <span>Dernière connexion : {a.derniere_connexion ? new Date(a.derniere_connexion).toLocaleString("fr-FR") : "—"}</span>
+                    </div>
+                    {a.role !== "superadmin" && (
+                      <div className="sa-admin-card-actions">
+                        <button
+                          type="button"
+                          className={`sa-card-btn${a.actif ? " sa-card-btn--danger" : " sa-card-btn--success"}`}
+                          disabled={togglingId === a.id}
+                          onClick={() => handleToggle(a.id)}
+                        >
+                          {togglingId === a.id ? "…" : a.actif ? <><Ban size={14} /> Bloquer</> : <><CheckCircle size={14} /> Débloquer</>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -575,8 +622,9 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
                 onChange={(e) => setCreateForm((p) => ({ ...p, password: e.target.value }))}
               />
             </label>
+            <p className="sa-modal-hint">Minimum 12 caractères.</p>
             <label>
-              Confirmer
+              Confirmer le mot de passe
               <input
                 type="password"
                 className="admin-question-input"
@@ -609,6 +657,7 @@ export default function SuperAdminDashboard({ onLogout, onOpenHotelDashboard }) 
                 onChange={(e) => setPwdForm((p) => ({ ...p, password: e.target.value }))}
               />
             </label>
+            <p className="sa-modal-hint">Minimum 12 caractères.</p>
             <label>
               Confirmer
               <input

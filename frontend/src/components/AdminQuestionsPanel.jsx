@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { API_URL } from "../config/api";
 import { authHeaders, ADMIN_AXIOS } from "../config/auth";
-import { DEPARTEMENTS } from "../constants/ratings";
+import { ALL_ADMIN_CATEGORIES } from "../constants/ratings";
 import { withQuestionsFallback } from "../utils/questions";
 
 const MAX_TEXTE = 500;
@@ -24,14 +24,17 @@ const MAX_TEXTE = 500;
 const CATEGORY_COLORS = {
   Accueil:    { from: "#071b36", to: "#1e3a5f", dot: "#60a5fa" },
   Chambres:   { from: "#1e3a5f", to: "#2e5090", dot: "#93c5fd" },
-  Restaurants:{ from: "#1a3a2a", to: "#1e5c3a", dot: "#6ee7b7" },
-  Loisirs:    { from: "#3b1a5f", to: "#5b2d8e", dot: "#c4b5fd" },
-  "Propreté": { from: "#4a1a0a", to: "#7c2d12", dot: "#fca5a5" },
+  "Le Bandama Petit Déjeuner": { from: "#1a3a2a", to: "#1e5c3a", dot: "#6ee7b7" },
+  "Le Panoramique": { from: "#2a1a3a", to: "#4a2a6a", dot: "#d8b4fe" },
+  "L'Alocodrome": { from: "#3a1a1a", to: "#6a2a2a", dot: "#fca5a5" },
+  "Loisirs et Divertissements": { from: "#3b1a5f", to: "#5b2d8e", dot: "#c4b5fd" },
+  "Cadre Général": { from: "#4a1a0a", to: "#7c2d12", dot: "#fdba74" },
+  "Tourisme Affaires": { from: "#0c2340", to: "#17375e", dot: "#c9a84c" },
 };
 
 function activeForClient(all) {
   const active = {};
-  for (const dept of DEPARTEMENTS) {
+  for (const dept of ALL_ADMIN_CATEGORIES) {
     active[dept] = (all[dept] || []).filter((q) => q.actif !== false && q.actif !== 0);
   }
   return withQuestionsFallback(active);
@@ -188,10 +191,10 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
     );
   }
 
-  const totalActive = DEPARTEMENTS.reduce((sum, cat) => {
+  const totalActive = ALL_ADMIN_CATEGORIES.reduce((sum, cat) => {
     return sum + (grouped[cat] || []).filter((q) => q.actif).length;
   }, 0);
-  const totalAll = DEPARTEMENTS.reduce((sum, cat) => sum + (grouped[cat] || []).length, 0);
+  const totalAll = ALL_ADMIN_CATEGORIES.reduce((sum, cat) => sum + (grouped[cat] || []).length, 0);
 
   return (
     <div className="aqp-root">
@@ -233,29 +236,9 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
           {error}
         </div>
       )}
-
-      {/* Confirmation suppression */}
-      {confirmDelete && (
-        <div className="aqp-confirm-overlay">
-          <div className="aqp-confirm-box">
-            <Trash2 size={22} className="aqp-confirm-icon" />
-            <p className="aqp-confirm-title">Supprimer cette question ?</p>
-            <p className="aqp-confirm-text">« {confirmDelete.texte} »</p>
-            <div className="aqp-confirm-actions">
-              <button type="button" className="admin-btn admin-btn-outline admin-btn-sm" onClick={() => setConfirmDelete(null)}>
-                Annuler
-              </button>
-              <button type="button" className="admin-btn aqp-btn-delete admin-btn-sm" disabled={busy} onClick={confirmAndDelete}>
-                <Trash2 size={14} />
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
       <div className="aqp-categories">
-        {DEPARTEMENTS.map((cat) => {
+        {ALL_ADMIN_CATEGORIES.map((cat) => {
           const allList  = [...(grouped[cat] || [])].sort((a, b) => a.ordre - b.ordre);
           const list     = filterList(allList);
           const colors   = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Accueil;
@@ -333,11 +316,32 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
                     {searchQuery ? `Aucun résultat pour « ${searchQuery} »` : "Aucune question dans cette catégorie."}
                   </li>
                 )}
-                {list.map((q, idx) => {
+                {list.map((q) => {
                   const realIdx = allList.indexOf(q);
                   return (
                     <li key={q.id} className={`aqp-item${q.actif ? "" : " aqp-item--inactive"}`}>
-                      {editingId === q.id ? (
+                      {confirmDelete?.id === q.id ? (
+                        <div className="aqp-item-confirm">
+                          <div className="aqp-item-confirm-msg">
+                            <Trash2 size={16} />
+                            <div>
+                              <p className="aqp-item-confirm-title">Supprimer définitivement ?</p>
+                              <p className="aqp-item-confirm-sub">
+                                « {q.texte.length > 65 ? q.texte.slice(0, 65) + "…" : q.texte} »
+                              </p>
+                            </div>
+                          </div>
+                          <div className="aqp-item-confirm-btns">
+                            <button type="button" className="aqp-confirm-cancel-btn" onClick={() => setConfirmDelete(null)}>
+                              Annuler
+                            </button>
+                            <button type="button" className="aqp-confirm-ok-btn" disabled={busy} onClick={confirmAndDelete}>
+                              <Trash2 size={13} />
+                              {busy ? "…" : "Supprimer"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : editingId === q.id ? (
                         <div className="aqp-edit-form">
                           <div className="aqp-textarea-wrap">
                             <textarea

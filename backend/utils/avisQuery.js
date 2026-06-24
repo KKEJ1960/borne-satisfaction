@@ -1,4 +1,4 @@
-const CATEGORIES = ["Accueil", "Chambres", "Restaurants", "Loisirs", "Propreté", "Global"];
+const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires", "Global"];
 
 /**
  * Construit WHERE + params pour les requêtes avis (liste, export, preview archive).
@@ -33,6 +33,12 @@ export function buildAvisFilters(query = {}) {
       params.push(n);
     }
   }
+  if (query.type_sejour && query.type_sejour !== "Tous") {
+    if (["loisirs", "affaires"].includes(query.type_sejour)) {
+      conditions.push("c.type_sejour = ?");
+      params.push(query.type_sejour);
+    }
+  }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -53,7 +59,7 @@ export function buildAvisFilters(query = {}) {
 export async function fetchAvisRows(db, query = {}) {
   const { whereClause, params } = buildAvisFilters(query);
   const sql = `
-    SELECT a.*, c.nom, c.prenom, c.telephone, c.email, c.numero_chambre
+    SELECT a.*, c.nom, c.prenom, c.telephone, c.email, c.numero_chambre, c.type_sejour
     FROM avis a
     JOIN clients c ON a.client_id = c.id
     ${whereClause}

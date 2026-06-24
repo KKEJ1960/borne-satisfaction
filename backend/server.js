@@ -33,6 +33,14 @@ const __dirname = dirname(__filename);
 
 dotenv.config({ path: join(__dirname, ".env") });
 
+// ── Sécurité processus : capturer les rejets non gérés ───────────────────────
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Promesse rejetée non gérée :", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("❌ Exception non capturée :", err);
+});
+
 // ── P1.2 — Validation critique du JWT_SECRET au démarrage ────────────────────
 const JWT_SECRET = process.env.JWT_SECRET;
 const KNOWN_WEAK_SECRETS = [
@@ -62,7 +70,7 @@ const logger = pino({
 });
 
 // ── Constantes métier ─────────────────────────────────────────────────────────
-const CATEGORIES = ["Accueil", "Chambres", "Restaurants", "Loisirs", "Propreté"];
+const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires"];
 const VALID_DEPARTEMENTS = [...CATEGORIES, "Global"];
 
 // ── P3.2 / P3.3 — Validation helpers ─────────────────────────────────────────
@@ -77,6 +85,7 @@ function validateClient(body) {
   const telephone = (body.telephone || "").trim();
   const email = (body.email || "").trim();
   const numero_chambre = (body.numero_chambre || "").trim();
+  const type_sejour = (body.type_sejour || "loisirs").trim();
 
   if (!nom || !prenom || !telephone) return null;
   if (nom.length > 100 || !NOM_REGEX.test(nom)) return null;
@@ -84,6 +93,7 @@ function validateClient(body) {
   if (!TEL_REGEX.test(telephone)) return null;
   if (email && (email.length > 255 || !EMAIL_REGEX.test(email))) return null;
   if (numero_chambre && !ALPHANUM_REGEX.test(numero_chambre)) return null;
+  if (!["loisirs", "affaires"].includes(type_sejour)) return null;
 
   return {
     nom,
@@ -91,6 +101,7 @@ function validateClient(body) {
     telephone,
     email: email || null,
     numero_chambre: numero_chambre || "",
+    type_sejour,
   };
 }
 
@@ -113,30 +124,30 @@ function validateAvis(body) {
   };
 }
 
-// ── P2.1 — CORS avec liste blanche dynamique ─────────────────────────────────
-// Combine les origines du .env ET toutes les IPs locales de la machine.
-// Ainsi l'IP peut changer (DHCP) sans nécessiter de redémarrage ou de mise à jour du .env.
-function buildAllowedOrigins() {
-  const fromEnv = (process.env.ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+// ── P2.1 — CORS dynamique réseau local ───────────────────────────────────────
+// Origines fixes autorisées (depuis .env ou fallback localhost)
+const staticAllowedOrigins = new Set(
+  [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    ...(process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean),
+  ]
+);
 
-  const localOrigins = ["http://localhost:5173", "http://localhost:5174"];
-  for (const ifaces of Object.values(os.networkInterfaces())) {
-    for (const iface of ifaces) {
-      if (iface.family === "IPv4" && !iface.internal) {
-        localOrigins.push(`http://${iface.address}:5173`);
-        localOrigins.push(`http://${iface.address}:5174`);
-      }
-    }
+// Vérifie si une origin est autorisée :
+// 1. Origin connue dans la liste statique, OU
+// 2. Port 5173/5174 sur n'importe quelle IP (frontend Vite, IP DHCP variable)
+// Cela évite de redémarrer le backend quand le WiFi change d'IP.
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (staticAllowedOrigins.has(origin)) return true;
+  try {
+    const { protocol, port } = new URL(origin);
+    return protocol === "http:" && (port === "5173" || port === "5174");
+  } catch {
+    return false;
   }
-
-  const all = [...new Set([...fromEnv, ...localOrigins])];
-  return all;
 }
-
-const allowedOrigins = buildAllowedOrigins();
 
 // ── P3.1 — Rate limiters ──────────────────────────────────────────────────────
 const loginLimiter = rateLimit({
@@ -188,8 +199,7 @@ app.use(
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Autorise les requêtes sans origin (même hôte, curl, mobile natif)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         cb(null, true);
       } else {
         logger.warn({ origin }, "Requête CORS bloquée");
@@ -197,8 +207,15 @@ app.use(
       }
     },
     credentials: true, // Indispensable pour transmettre les cookies HttpOnly
+    exposedHeaders: ["Content-Disposition"], // Permet au client de lire le nom de fichier pour le téléchargement
   })
 );
+
+// Renvoie 403 au lieu de 500 pour les origines CORS bloquées
+app.use((err, req, res, next) => {
+  if (err.message === "CORS bloqué") return res.status(403).json({ error: "Origine non autorisée" });
+  next(err);
+});
 
 app.use(cookieParser());
 app.use(express.json());
@@ -246,10 +263,10 @@ app.post("/client", clientLimiter, async (req, res) => {
       return res.status(400).json({ error: "Données d'identification invalides." });
     }
     const [result] = await db.query(
-      "INSERT INTO clients (nom, prenom, telephone, email, numero_chambre) VALUES (?, ?, ?, ?, ?)",
-      [data.nom, data.prenom, data.telephone, data.email, data.numero_chambre]
+      "INSERT INTO clients (nom, prenom, telephone, email, numero_chambre, type_sejour) VALUES (?, ?, ?, ?, ?, ?)",
+      [data.nom, data.prenom, data.telephone, data.email, data.numero_chambre, data.type_sejour]
     );
-    res.status(201).json({ id: result.insertId, message: "Client enregistré" });
+    res.status(201).json({ id: result.insertId, type_sejour: data.type_sejour, message: "Client enregistré" });
   } catch (error) {
     logger.error({ err: error.message }, "Erreur création client");
     res.status(500).json({ error: "Erreur serveur lors de la création du client" });
@@ -334,7 +351,7 @@ app.post("/admin/login", loginLimiter, async (req, res) => {
     res.cookie("borne_admin_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 4 * 60 * 60 * 1000, // 4h en ms
     });
 
@@ -363,7 +380,7 @@ app.post("/admin/logout", requireAdmin, async (req, res) => {
   res.clearCookie("borne_admin_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
   await logActivity(db, {
     adminId: req.admin?.adminId,
@@ -474,7 +491,7 @@ app.put("/admin/questions/:id", requireAdmin, async (req, res) => {
 app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await db.query("UPDATE questions SET actif = false WHERE id = ?", [id]);
+    const [result] = await db.query("DELETE FROM questions WHERE id = ?", [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Question introuvable" });
     }
@@ -484,7 +501,7 @@ app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
       details: JSON.stringify({ id: Number(id) }),
       ip: clientIp(req),
     });
-    res.json({ success: true, id: Number(id), actif: false });
+    res.json({ success: true, id: Number(id) });
   } catch (error) {
     logger.error({ err: error.message, stack: error.stack }, "Erreur DELETE /admin/questions");
     res.status(500).json({ error: process.env.NODE_ENV !== "production" ? (error.message || "Erreur serveur") : "Erreur serveur" });
@@ -606,9 +623,16 @@ app.get("/admin/export/pdf", requireAdmin, async (req, res) => {
   }
 });
 
+// ── Error handler global Express ──────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  logger.error({ err: err.message, stack: err.stack, url: req.url }, "Erreur Express non gérée");
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "Erreur serveur interne" });
+});
+
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, "0.0.0.0", () => {
-  logger.info({ port: PORT, env: process.env.NODE_ENV || "development", allowedOrigins }, "Serveur backend démarré");
+  logger.info({ port: PORT, env: process.env.NODE_ENV || "development" }, "Serveur backend démarré");
 });

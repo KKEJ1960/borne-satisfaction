@@ -35,8 +35,8 @@ export default function CommentaireFinal({ onFinish }) {
         <div className="comment-icon-wrap">
           <MessageSquare size={22} color="#ffffff" />
         </div>
-        <h2>Un dernier mot ?</h2>
-        <p className="comment-page-desc">Impression générale sur votre séjour (optionnel)</p>
+        <h2>Qu'est-ce que nous pourrions améliorer ?</h2>
+        <p className="comment-page-desc">Merci de nous le dire, votre avis nous est précieux. (optionnel)</p>
         <textarea
           value={commentaire}
           onChange={(e) => setCommentaire(e.target.value)}

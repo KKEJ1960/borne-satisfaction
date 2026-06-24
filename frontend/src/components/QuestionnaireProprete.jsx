@@ -4,8 +4,8 @@ import QuestionnaireScreen from "./QuestionnaireScreen";
 export default function QuestionnaireProprete({ categoryQuestions = [], ...props }) {
   return (
     <QuestionnaireScreen
-      deptName="Propreté"
-      deptStep={5}
+      deptName="Cadre Général"
+      deptStep={7}
       Icon={Sparkles}
       questions={categoryQuestions}
       {...props}

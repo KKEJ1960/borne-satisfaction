@@ -18,7 +18,10 @@ export function parseAvisCommentaire(commentaire) {
   return { detail: commentaire, reponses: [] };
 }
 
-export function formatNoteLine(note) {
+export function formatNoteLine(note, type, choiceLabel) {
+  if (type === "choice") return choiceLabel || String(note);
+  if (type === "nps" || (note !== null && note !== undefined && note > 4)) return `${note}/10`;
+  if (type === "stars") return `${note}/5 ★`;
   if (!note) return "";
   return `${NOTE_EMOJIS[note] || ""} ${NOTE_LABELS[note] || note}`.trim();
 }

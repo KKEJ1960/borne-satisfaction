@@ -27,6 +27,8 @@ import {
   RotateCcw,
   ChevronDown,
   X,
+  Briefcase,
+  Palmtree,
 } from "lucide-react";
 import { API_URL } from "../config/api";
 import { authHeaders, ADMIN_AXIOS } from "../config/auth";
@@ -37,7 +39,63 @@ import "../style.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
-const CHART_COLORS = ["#071b36", "#1e3a5f", "#2E5090", "#3B82F6", "#60A5FA"];
+const CHART_COLORS = ["#3B82F6", "#6366F1", "#8B5CF6", "#0EA5E9", "#14B8A6", "#10B981"];
+const NOTE_CHART_COLORS = {
+  1: "#ef4444",
+  2: "#f97316",
+  3: "#eab308",
+  4: "#22c55e",
+};
+const BAR_OPTIONS = {
+  indexAxis: "y",
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: "#0f172a",
+      titleColor: "#e2e8f0",
+      bodyColor: "rgba(255,255,255,0.8)",
+      padding: 14,
+      cornerRadius: 12,
+      displayColors: false,
+      callbacks: {
+        title: (ctx) => ctx[0].label,
+        label: (ctx) => `  ${ctx.parsed.x} / 4`,
+      },
+    },
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      max: 4,
+      ticks: { stepSize: 1, color: "#94a3b8", font: { size: 11 } },
+      grid: { color: "rgba(7,27,54,0.05)" },
+      border: { display: false },
+    },
+    y: {
+      ticks: { color: "#1e293b", font: { size: 12, weight: "600" } },
+      grid: { display: false },
+      border: { display: false },
+    },
+  },
+};
+const DONUT_OPTIONS = {
+  responsive: true,
+  maintainAspectRatio: true,
+  cutout: "76%",
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: "#0f172a",
+      titleColor: "#e2e8f0",
+      bodyColor: "rgba(255,255,255,0.8)",
+      padding: 14,
+      cornerRadius: 12,
+      displayColors: true,
+    },
+  },
+};
 
 const PERIOD_PRESETS = [
   { id: "today", label: "Aujourd'hui" },
@@ -51,9 +109,12 @@ const CATEGORIES_FILTER = [
   "Toutes",
   "Accueil",
   "Chambres",
-  "Restaurants",
-  "Loisirs",
-  "Propreté",
+  "Le Bandama Petit Déjeuner",
+  "Le Panoramique",
+  "L'Alocodrome",
+  "Loisirs et Divertissements",
+  "Cadre Général",
+  "Tourisme Affaires",
   "Global",
 ];
 
@@ -63,6 +124,7 @@ const INITIAL_FILTER = {
   dateFin: "",
   categorie: "Toutes",
   note: "Toutes",
+  type_sejour: "Tous",
   archived: false,
 };
 
@@ -108,6 +170,9 @@ function filtersToParams(filterState) {
   }
   if (filterState.note && filterState.note !== "Toutes") {
     p.note = filterState.note;
+  }
+  if (filterState.type_sejour && filterState.type_sejour !== "Tous") {
+    p.type_sejour = filterState.type_sejour;
   }
   return p;
 }
@@ -262,12 +327,20 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
       const a = document.createElement("a");
       a.href = url;
       a.download = name;
+      a.style.display = "none";
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       showToast(`Export ${format.toUpperCase()} téléchargé.`);
     } catch (err) {
-      showToast("Export impossible.", "error");
-      console.error(err);
+      const status = err.response?.status;
+      if (status === 401) {
+        showToast("Session expirée — reconnectez-vous.", "error");
+      } else {
+        showToast("Export impossible. Vérifiez la console.", "error");
+      }
+      console.error("Export error:", err);
     }
   };
 
@@ -284,26 +357,34 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
     return acc;
   }, {});
 
+  const deptEntries = Object.entries(parDepartement);
   const barData = {
-    labels: Object.keys(parDepartement),
+    labels: deptEntries.map(([dept]) => dept),
     datasets: [
       {
         label: "Note moyenne (/4)",
-        data: Object.values(parDepartement).map((v) => (v.total / v.count).toFixed(2)),
-        backgroundColor: CHART_COLORS,
-        borderRadius: 6,
+        data: deptEntries.map(([, v]) => +(v.total / v.count).toFixed(2)),
+        backgroundColor: deptEntries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+        borderRadius: { topRight: 8, bottomRight: 8 },
+        borderSkipped: false,
+        barThickness: 28,
       },
     ],
   };
 
-  const repartition = [1, 2, 3, 4].map((n) => notes.filter((a) => a.note === n).length);
+  const noteStats = [4, 3, 2, 1].map((n) => {
+    const count = notes.filter((a) => a.note === n).length;
+    return { note: n, label: NOTE_LABELS[n], count, pct: notes.length ? Math.round((count / notes.length) * 100) : 0, color: NOTE_CHART_COLORS[n] };
+  });
   const pieData = {
-    labels: [1, 2, 3, 4].map((n) => NOTE_LABELS[n]),
+    labels: noteStats.map((s) => s.label),
     datasets: [
       {
-        data: repartition,
-        backgroundColor: CHART_COLORS.slice(0, 4),
-        borderWidth: 0,
+        data: noteStats.map((s) => s.count),
+        backgroundColor: noteStats.map((s) => s.color),
+        borderWidth: 4,
+        borderColor: "#fff",
+        hoverOffset: 8,
       },
     ],
   };
@@ -536,6 +617,19 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
                   ))}
                 </select>
               </label>
+              <label>
+                Type de séjour
+                <select
+                  value={filterState.type_sejour}
+                  onChange={(e) =>
+                    setFilterState((prev) => ({ ...prev, type_sejour: e.target.value }))
+                  }
+                >
+                  <option value="Tous">Tous</option>
+                  <option value="loisirs">Loisirs / Personnel</option>
+                  <option value="affaires">Affaires / Professionnel</option>
+                </select>
+              </label>
               <button type="button" className="admin-btn admin-btn-outline admin-btn-sm" onClick={resetFilters}>
                 <RotateCcw size={14} />
                 Réinitialiser
@@ -576,30 +670,54 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
             <>
               <div className="admin-charts">
                 <div className="admin-chart-card">
-                  <h3>Performance par catégorie</h3>
-                  {Object.keys(parDepartement).length > 0 ? (
-                    <Bar
-                      data={barData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, max: 4, ticks: { stepSize: 1 } } },
-                      }}
-                    />
+                  <div className="admin-chart-header">
+                    <div>
+                      <h3>Performance par catégorie</h3>
+                      <span className="admin-chart-sub">Note moyenne sur 4 points</span>
+                    </div>
+                    <div className="admin-chart-badge">
+                      {deptEntries.length} catégorie{deptEntries.length > 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  {deptEntries.length > 0 ? (
+                    <div className="admin-chart-wrap" style={{ height: Math.max(160, deptEntries.length * 52) + "px" }}>
+                      <Bar data={barData} options={BAR_OPTIONS} />
+                    </div>
                   ) : (
                     <p className="admin-chart-empty">Pas de notes sur cette sélection.</p>
                   )}
                 </div>
                 <div className="admin-chart-card">
-                  <h3>Répartition des notes</h3>
+                  <div className="admin-chart-header">
+                    <div>
+                      <h3>Répartition des notes</h3>
+                      <span className="admin-chart-sub">{notes.length} évaluation{notes.length > 1 ? "s" : ""} notée{notes.length > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="admin-chart-badge admin-chart-badge--score">{noteMoyenne}<span>/4</span></div>
+                  </div>
                   {notes.length > 0 ? (
-                    <Doughnut
-                      data={pieData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { position: "bottom" } },
-                      }}
-                    />
+                    <>
+                      <div className="admin-chart-donut-wrap">
+                        <Doughnut data={pieData} options={DONUT_OPTIONS} />
+                        <div className="admin-chart-donut-center">
+                          <span className="admin-chart-donut-score">{noteMoyenne}</span>
+                          <span className="admin-chart-donut-label">/ 4</span>
+                        </div>
+                      </div>
+                      <div className="admin-chart-legend-custom">
+                        {noteStats.map((s) => (
+                          <div key={s.note} className="admin-legend-row">
+                            <span className="admin-legend-dot" style={{ background: s.color }} />
+                            <span className="admin-legend-label">{s.label}</span>
+                            <div className="admin-legend-bar-track">
+                              <div className="admin-legend-bar-fill" style={{ width: `${s.pct}%`, background: s.color }} />
+                            </div>
+                            <span className="admin-legend-pct">{s.pct}%</span>
+                            <span className="admin-legend-count">({s.count})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <p className="admin-chart-empty">Pas de données.</p>
                   )}
@@ -613,77 +731,131 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
                   {groupesTries.length > 1 ? "s" : ""})
                 </h2>
 
-                {groupesTries.map((groupe) => (
-                  <article key={groupe.client.client_id} className="admin-review-group">
-                    <header className="admin-review-client">
-                      <div>
-                        <strong>
-                          {groupe.client.prenom} {groupe.client.nom}
-                        </strong>
-                        {groupe.client.numero_chambre && (
-                          <span className="admin-room-badge">
-                            <BedDouble size={12} />
-                            Ch. {groupe.client.numero_chambre}
-                          </span>
-                        )}
-                      </div>
-                      <div className="admin-review-contact">
-                        <span>
-                          <Phone size={12} /> {groupe.client.telephone}
-                        </span>
-                        {groupe.client.email && (
-                          <span>
-                            <Mail size={12} /> {groupe.client.email}
-                          </span>
-                        )}
-                      </div>
-                      <time className="admin-review-date">
-                        {new Date(
-                          Math.max(...groupe.avis.map((x) => new Date(x.date).getTime()))
-                        ).toLocaleString("fr-FR")}
-                      </time>
-                    </header>
-
-                    {sortAvisClient(groupe.avis).map((a) => {
-                      const { detail, reponses } = parseAvisCommentaire(a.commentaire);
-                      return (
-                        <div key={a.id} className="admin-review-item">
-                          <div className="admin-review-item-head">
-                            <span className="admin-review-dept">{a.departement}</span>
-                            {a.note > 0 ? (
-                              <span
-                                className="admin-review-note"
-                                style={{
-                                  color: NOTE_COLORS[a.note],
-                                  borderColor: `${NOTE_COLORS[a.note]}50`,
-                                  background: `${NOTE_COLORS[a.note]}12`,
-                                }}
-                              >
-                                {NOTE_EMOJIS[a.note]} {NOTE_LABELS[a.note]} ({a.note}/4)
+                {groupesTries.map((groupe) => {
+                  const initiales = `${groupe.client.prenom?.[0] ?? ""}${groupe.client.nom?.[0] ?? ""}`.toUpperCase();
+                  const notedAvis = groupe.avis.filter((a) => a.note > 0);
+                  const avgNote = notedAvis.length
+                    ? (notedAvis.reduce((s, a) => s + a.note, 0) / notedAvis.length).toFixed(1)
+                    : null;
+                  return (
+                    <article key={groupe.client.client_id} className="admin-review-group">
+                      <header className="admin-review-client">
+                        <div className="admin-review-avatar">{initiales}</div>
+                        <div className="admin-review-client-info">
+                          <div className="admin-review-client-name">
+                            <strong>{groupe.client.prenom} {groupe.client.nom}</strong>
+                            {groupe.client.type_sejour === "affaires" ? (
+                              <span className="admin-type-badge admin-type-badge--affaires">
+                                <Briefcase size={10} />
+                                Professionnel
                               </span>
                             ) : (
-                              <span className="admin-review-note-global">Commentaire global</span>
+                              <span className="admin-type-badge admin-type-badge--loisirs">
+                                <Palmtree size={10} />
+                                Loisirs
+                              </span>
+                            )}
+                            {groupe.client.numero_chambre && (
+                              <span className="admin-room-badge">
+                                <BedDouble size={11} />
+                                Ch. {groupe.client.numero_chambre}
+                              </span>
                             )}
                           </div>
-                          {reponses.length > 0 && (
-                            <ul className="admin-review-questions">
-                              {reponses.map((r, i) => (
-                                <li key={i}>
-                                  <span>{r.question}</span>
-                                  <strong>{formatNoteLine(r.note)}</strong>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {detail && <p className="admin-review-detail">{detail}</p>}
-                          {!detail && reponses.length === 0 && a.commentaire && (
-                            <p className="admin-review-detail">{a.commentaire}</p>
-                          )}
+                          <div className="admin-review-contact">
+                            <span><Phone size={11} /> {groupe.client.telephone}</span>
+                            {groupe.client.email && (
+                              <span><Mail size={11} /> {groupe.client.email}</span>
+                            )}
+                          </div>
                         </div>
-                      );
-                    })}
-                  </article>
-                ))}
+                        <div className="admin-review-client-meta">
+                          {avgNote && (() => {
+                            const sc = parseFloat(avgNote);
+                            const scoreColor = sc >= 3.5 ? "#22c55e" : sc >= 2.5 ? "#eab308" : sc >= 1.5 ? "#f97316" : "#ef4444";
+                            return (
+                              <div className="admin-review-avg">
+                                <span className="admin-review-avg-score" style={{ color: scoreColor }}>{avgNote}</span>
+                                <span className="admin-review-avg-label">/4</span>
+                              </div>
+                            );
+                          })()}
+                          <time className="admin-review-date">
+                            {new Date(
+                              Math.max(...groupe.avis.map((x) => new Date(x.date).getTime()))
+                            ).toLocaleString("fr-FR")}
+                          </time>
+                        </div>
+                      </header>
+                      {avgNote && (() => {
+                        const sc = parseFloat(avgNote);
+                        const scoreColor = sc >= 3.5 ? "#22c55e" : sc >= 2.5 ? "#eab308" : sc >= 1.5 ? "#f97316" : "#ef4444";
+                        return (
+                          <div className="admin-review-score-track">
+                            <div className="admin-review-score-fill" style={{ width: `${(sc / 4) * 100}%`, background: scoreColor }} />
+                          </div>
+                        );
+                      })()}
+
+                      <div className="admin-review-items">
+                        {sortAvisClient(groupe.avis).map((a) => {
+                          const { detail, reponses } = parseAvisCommentaire(a.commentaire);
+                          const noteColor = a.note > 0 ? NOTE_COLORS[a.note] : null;
+                          return (
+                            <div
+                              key={a.id}
+                              className="admin-review-item"
+                              style={noteColor ? { "--note-color": noteColor } : {}}
+                            >
+                              <div className="admin-review-item-head">
+                                <span className="admin-review-dept">
+                                  {noteColor && <span className="admin-review-dept-dot" style={{ background: noteColor }} />}
+                                  {a.departement}
+                                </span>
+                                {a.note > 0 ? (
+                                  <span
+                                    className="admin-review-note"
+                                    style={{
+                                      color: noteColor,
+                                      borderColor: `${noteColor}40`,
+                                      background: `${noteColor}10`,
+                                    }}
+                                  >
+                                    {NOTE_EMOJIS[a.note]}
+                                    <span>{NOTE_LABELS[a.note]}</span>
+                                    <strong>{a.note}/4</strong>
+                                  </span>
+                                ) : (
+                                  <span className="admin-review-note-global">Commentaire global</span>
+                                )}
+                              </div>
+                              {reponses.length > 0 && (
+                                <ul className="admin-review-questions">
+                                  {reponses.map((r, i) => (
+                                    <li key={i}>
+                                      <span className="admin-review-q-text">{r.question}</span>
+                                      <span className="admin-review-q-answer">{formatNoteLine(r.note, r.type, r.choiceLabel)}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {detail && (
+                                <blockquote className="admin-review-detail">
+                                  {detail}
+                                </blockquote>
+                              )}
+                              {!detail && reponses.length === 0 && a.commentaire && (
+                                <blockquote className="admin-review-detail">
+                                  {a.commentaire}
+                                </blockquote>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </article>
+                  );
+                })}
               </section>
             </>
           )}

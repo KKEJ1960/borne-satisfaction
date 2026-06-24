@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
-import { RATING_OPTIONS, CATEGORIES_META } from "../constants/ratings";
+import { RATING_OPTIONS, CATEGORIES_META, DEPARTEMENTS } from "../constants/ratings";
 import { getQuestionText } from "../utils/questions";
 import ScreenLayout from "./ScreenLayout";
 import CategoryJourney from "./CategoryJourney";
+import RatingFace from "./RatingFace";
 import "../style.css";
 
 export default function QuestionnaireScreen({
@@ -92,7 +93,7 @@ export default function QuestionnaireScreen({
         <div className={`q-category-zone q-category-zone--${deptStep}`}>
           <div className="q-category-zone-label">
             <span className="q-category-pill">
-              Catégorie {deptStep}/5 · <em>{deptName}</em>
+              Catégorie {deptStep}/{DEPARTEMENTS.length} · <em>{deptName}</em>
             </span>
           </div>
 
@@ -121,17 +122,14 @@ export default function QuestionnaireScreen({
                 key={opt.value}
                 role="button"
                 tabIndex={0}
-                className="q-rating-card"
-                style={{ background: opt.bg, borderColor: opt.borderColor }}
+                className={`q-rating-card q-rating-card--${opt.value}`}
                 onClick={() => handleClick(opt.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleClick(opt.value)}
               >
-                <span className="q-rating-emoji" aria-hidden="true">
-                  {opt.emoji}
-                </span>
-                <p className="q-rating-label" style={{ color: opt.color }}>
-                  {opt.label}
-                </p>
+                <div className="q-rating-icon-wrap">
+                  <RatingFace value={opt.value} />
+                </div>
+                <p className="q-rating-label">{opt.label}</p>
               </div>
             ))}
           </div>

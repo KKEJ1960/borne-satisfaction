@@ -1,18 +1,24 @@
 import {
   ConciergeBell,
   BedDouble,
-  UtensilsCrossed,
+  Coffee,
+  Eye,
+  Flame,
   Palmtree,
   Sparkles,
   MessageSquare,
+  Briefcase,
 } from "lucide-react";
 
 const ICONS = {
   Accueil: ConciergeBell,
   Chambres: BedDouble,
-  Restaurants: UtensilsCrossed,
-  Loisirs: Palmtree,
-  Propreté: Sparkles,
+  "Le Bandama Petit Déjeuner": Coffee,
+  "Le Panoramique": Eye,
+  "L'Alocodrome": Flame,
+  "Loisirs et Divertissements": Palmtree,
+  "Cadre Général": Sparkles,
+  "Tourisme Affaires": Briefcase,
   Commentaire: MessageSquare,
 };
 

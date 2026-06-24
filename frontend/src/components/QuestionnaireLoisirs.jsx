@@ -4,8 +4,8 @@ import QuestionnaireScreen from "./QuestionnaireScreen";
 export default function QuestionnaireLoisirs({ categoryQuestions = [], ...props }) {
   return (
     <QuestionnaireScreen
-      deptName="Loisirs"
-      deptStep={4}
+      deptName="Loisirs et Divertissements"
+      deptStep={6}
       Icon={Palmtree}
       questions={categoryQuestions}
       {...props}

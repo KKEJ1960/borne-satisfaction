@@ -5,7 +5,9 @@ import {
   Edit2,
   ConciergeBell,
   Bed,
-  UtensilsCrossed,
+  Coffee,
+  Eye,
+  Flame,
   Palmtree,
   Sparkles,
   MessageSquare,
@@ -24,9 +26,11 @@ import "../style.css";
 const CATEGORY_ICONS = {
   Accueil: ConciergeBell,
   Chambres: Bed,
-  Restaurants: UtensilsCrossed,
-  Loisirs: Palmtree,
-  Propreté: Sparkles,
+  "Le Bandama Petit Déjeuner": Coffee,
+  "Le Panoramique": Eye,
+  "L'Alocodrome": Flame,
+  "Loisirs et Divertissements": Palmtree,
+  "Cadre Général": Sparkles,
 };
 
 function NoteBadge({ note, compact }) {
@@ -100,8 +104,10 @@ export default function SynthesePage({
 
   const calculateMoyenne = (reponses) => {
     if (!reponses?.length) return "—";
-    const sum = reponses.reduce((acc, r) => acc + (r.note || 0), 0);
-    return (sum / reponses.length).toFixed(1);
+    const standard = reponses.filter((r) => !r.type);
+    if (!standard.length) return "—";
+    const sum = standard.reduce((acc, r) => acc + (r.note || 0), 0);
+    return (sum / standard.length).toFixed(1);
   };
 
   const handleStartEvaluation = (dept) => {
@@ -261,9 +267,11 @@ export default function SynthesePage({
               <section key={dept} className="synthese-card synthese-category-card">
                 <div className="synthese-category-head">
                   <div className="synthese-category-title">
+                    {Icon && (
                     <span className="synthese-category-icon">
                       <Icon size={18} color="#071b36" />
                     </span>
+                  )}
                     <h3>{dept}</h3>
                   </div>
                   {hasResponses && (
@@ -355,13 +363,23 @@ export default function SynthesePage({
                 ) : hasResponses ? (
                   <div>
                     {deptData.reponses.map((rep, idx) => {
+                      const isSpecial = !!rep.type;
                       const isEditing =
+                        !isSpecial &&
                         editingResponse?.dept === dept &&
                         editingResponse?.questionIndex === idx;
+                      const specialLabel = isSpecial
+                        ? rep.type === "stars"  ? `${rep.note}/5 ★`
+                        : rep.type === "nps"    ? `${rep.note}/10`
+                        : rep.type === "choice" ? (rep.choiceLabel || String(rep.note))
+                        : String(rep.note)
+                        : null;
                       return (
                         <div key={idx} className="synthese-question-row">
                           <p className="synthese-question-text">{rep.question}</p>
-                          {!isEditing ? (
+                          {isSpecial ? (
+                            <span className="synthese-special-badge">{specialLabel}</span>
+                          ) : !isEditing ? (
                             <button
                               type="button"
                               className="synthese-note-edit"

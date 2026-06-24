@@ -1,4 +1,4 @@
-import { DEPARTEMENTS } from "../constants/ratings";
+import { DEPARTEMENTS, CATEGORIES_META } from "../constants/ratings";
 import CategoryIcon from "./CategoryIcon";
 import "../style.css";
 
@@ -30,7 +30,7 @@ export default function CategoryJourney({
                   color={isCurrent ? "#071b36" : isDone && !isSkipped ? "#15803d" : "#64748b"}
                 />
               </span>
-              <span className="category-journey-name">{dept}</span>
+              <span className="category-journey-name">{CATEGORIES_META[dept]?.shortName ?? dept}</span>
               {isCurrent && <span className="category-journey-here">Vous êtes ici</span>}
               {status === "done" && !isSkipped && <span className="category-journey-check">✓</span>}
               {isSkipped && !isCurrent && <span className="category-journey-skip-label">—</span>}

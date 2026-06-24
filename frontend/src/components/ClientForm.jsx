@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { UserCircle2 } from "lucide-react";
+import { UserCircle2, Briefcase, Palmtree } from "lucide-react";
 import { API_URL } from "../config/api";
 import "../style.css";
-
-const ADMIN_BLOCK_MS = 10 * 60 * 1000;
-const MAX_ADMIN_FAILS = 3;
 
 export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuperAdminTrigger }) {
   const [formData, setFormData] = useState({
@@ -15,95 +12,61 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
     email: "",
     numero_chambre: "",
   });
+  const [typeSejour, setTypeSejour] = useState("loisirs");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [adminFailCount, setAdminFailCount] = useState(0);
-  const [blockedUntil, setBlockedUntil] = useState(null);
-  const blockTimerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (blockTimerRef.current) clearTimeout(blockTimerRef.current);
-    };
-  }, []);
-
-  const isBlocked = blockedUntil && Date.now() < blockedUntil;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const startAdminBlock = () => {
-    const until = Date.now() + ADMIN_BLOCK_MS;
-    setBlockedUntil(until);
-    setAdminFailCount(0);
-    if (blockTimerRef.current) clearTimeout(blockTimerRef.current);
-    blockTimerRef.current = setTimeout(() => setBlockedUntil(null), ADMIN_BLOCK_MS);
-  };
-
   const tryStaffLogin = async (login, password) => {
-    const response = await axios.post(`${API_URL}/admin/login`, { login, password }, { withCredentials: true });
+    const response = await axios.post(
+      `${API_URL}/admin/login`,
+      { login, password },
+      { withCredentials: true }
+    );
     if (!response.data?.success) return null;
     return response.data;
   };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (isBlocked) {
-      setError("Informations incorrectes");
-      return;
-    }
 
     const nomTrim = formData.nom.trim();
     const prenomTrim = formData.prenom.trim();
     const telTrim = formData.telephone.trim();
     const emailTrim = formData.email.trim();
 
-    const isSuperAdminAttempt =
-      emailTrim.length > 0 &&
-      (nomTrim.toLowerCase() === "superadmin" || prenomTrim.toLowerCase() === "superadmin");
-
-    const isAdminAttempt =
-      !isSuperAdminAttempt &&
-      emailTrim.length > 0 &&
-      (nomTrim.toLowerCase() === "admin" || prenomTrim.toLowerCase() === "admin");
-
     setError("");
     setIsLoading(true);
 
     try {
-      if (isSuperAdminAttempt || isAdminAttempt) {
-        const login = isSuperAdminAttempt ? "superadmin" : "admin";
+      // Tenter staff login uniquement si téléphone est vide.
+      // Les vrais clients remplissent toujours le téléphone (champ obligatoire *).
+      // Un admin remplit nom (login) + email (mot de passe) et laisse le téléphone vide.
+      // Cela évite de consommer le rate limit (5/15min) pour chaque client normal.
+      if (nomTrim && emailTrim && !telTrim) {
         try {
-          const data = await tryStaffLogin(login, emailTrim);
-          if (data?.role === "superadmin") {
-            onSuperAdminTrigger?.();
-            return;
-          }
-          if (data?.role === "admin") {
-            onAdminTrigger?.();
-            return;
-          }
+          const data = await tryStaffLogin(nomTrim, emailTrim);
+          if (data?.role === "superadmin") { onSuperAdminTrigger?.(); return; }
+          if (data?.role === "admin") { onAdminTrigger?.(); return; }
         } catch (err) {
           const status = err.response?.status;
-          if (status === 401 || status === 403 || status === 429) {
-            const nextFails = adminFailCount + 1;
-            setAdminFailCount(nextFails);
-            if (nextFails >= MAX_ADMIN_FAILS) startAdminBlock();
-            setError("Informations incorrectes");
+          if (status === 403) {
+            setError("Compte désactivé.");
             return;
           }
-          setError("Erreur lors de l'enregistrement. Veuillez réessayer.");
-          return;
+          if (status === 429) {
+            setError("Trop de tentatives. Veuillez patienter.");
+            return;
+          }
+          // 401 → pas un compte admin, continuer en inscription client normalement
         }
-        const nextFails = adminFailCount + 1;
-        setAdminFailCount(nextFails);
-        if (nextFails >= MAX_ADMIN_FAILS) startAdminBlock();
-        setError("Informations incorrectes");
-        return;
       }
 
+      // Inscription client standard
       if (!nomTrim || !prenomTrim || !telTrim) {
         setError("Veuillez remplir tous les champs obligatoires (*)");
         return;
@@ -115,8 +78,15 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
         telephone: telTrim,
         email: emailTrim || undefined,
         numero_chambre: formData.numero_chambre.trim() || undefined,
+        type_sejour: typeSejour,
       });
-      onClientIdentified({ id: response.data.id, ...formData, nom: nomTrim, prenom: prenomTrim });
+      onClientIdentified({
+        id: response.data.id,
+        ...formData,
+        nom: nomTrim,
+        prenom: prenomTrim,
+        type_sejour: response.data.type_sejour || typeSejour,
+      });
     } catch (err) {
       setError("Erreur lors de l'enregistrement. Veuillez réessayer.");
       console.error("Erreur enregistrement client");
@@ -133,7 +103,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
       <div className="client-form-hero-inner">
         <div className="client-form-shell">
           <div className="client-form-brand">
-            <UserCircle2 size={40} color="#071b36" />
+            <UserCircle2 size={58} color="#071b36" />
             <div>
               <h1>Hôtel Président</h1>
               <p className="client-subtitle">Yamoussoukro</p>
@@ -142,7 +112,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
 
           {error && <div className="message error">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="client-form-fields" noValidate>
+          <form onSubmit={handleSubmit} className="client-form-fields" noValidate autoComplete="off">
             <div className="client-form-row">
               <div>
                 <label htmlFor="prenom">Prénom *</label>
@@ -152,6 +122,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                   name="prenom"
                   value={formData.prenom}
                   onChange={handleChange}
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -163,6 +134,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                   name="nom"
                   value={formData.nom}
                   onChange={handleChange}
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -175,6 +147,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                 name="telephone"
                 value={formData.telephone}
                 onChange={handleChange}
+                autoComplete="off"
                 required
               />
             </div>
@@ -186,6 +159,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                 name="numero_chambre"
                 value={formData.numero_chambre}
                 onChange={handleChange}
+                autoComplete="off"
               />
             </div>
             <div>
@@ -196,11 +170,34 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                autoComplete="off"
               />
             </div>
+            <div className="client-form-type-section">
+              <p className="client-form-type-label">Type de séjour</p>
+              <div className="client-form-type-picker">
+                <button
+                  type="button"
+                  className={`client-type-opt${typeSejour === "loisirs" ? " is-active" : ""}`}
+                  onClick={() => setTypeSejour("loisirs")}
+                >
+                  <Palmtree size={15} />
+                  Loisirs / Personnel
+                </button>
+                <button
+                  type="button"
+                  className={`client-type-opt${typeSejour === "affaires" ? " is-active" : ""}`}
+                  onClick={() => setTypeSejour("affaires")}
+                >
+                  <Briefcase size={15} />
+                  Affaires / Professionnel
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={isLoading || isBlocked}
+              disabled={isLoading}
               className="btn-primary-compact client-form-submit"
             >
               {isLoading ? "Enregistrement..." : "Inscrivez-vous"}
