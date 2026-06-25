@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { UserCircle2, Briefcase, Palmtree } from "lucide-react";
 import { API_URL } from "../config/api";
+import { setAdminToken } from "../config/auth";
 import "../style.css";
 
 export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuperAdminTrigger }) {
@@ -22,11 +23,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
   };
 
   const tryStaffLogin = async (login, password) => {
-    const response = await axios.post(
-      `${API_URL}/admin/login`,
-      { login, password },
-      { withCredentials: true }
-    );
+    const response = await axios.post(`${API_URL}/admin/login`, { login, password });
     if (!response.data?.success) return null;
     return response.data;
   };
@@ -58,8 +55,8 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
       if (isStaffAttempt) {
         try {
           const data = await tryStaffLogin(nomTrim, emailTrim);
-          if (data?.role === "superadmin") { onSuperAdminTrigger?.(); return; }
-          if (data?.role === "admin") { onAdminTrigger?.(); return; }
+          if (data?.role === "superadmin") { setAdminToken(data.token); onSuperAdminTrigger?.(); return; }
+          if (data?.role === "admin") { setAdminToken(data.token); onAdminTrigger?.(); return; }
         } catch (err) {
           const status = err.response?.status;
           if (status === 403) { setError("Compte désactivé."); return; }

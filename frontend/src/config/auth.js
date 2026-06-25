@@ -1,20 +1,11 @@
-// P4.1 — Token migré vers cookie HttpOnly géré par le serveur.
-// Le frontend n'a plus accès au JWT (inaccessible via JS = protection XSS).
+let _token = null;
+
+export function setAdminToken(token) { _token = token; }
+export function getAdminToken() { return _token; }
+export function clearAdminToken() { _token = null; }
 
 export function authHeaders() {
-  return {};
+  return _token ? { Authorization: `Bearer ${_token}` } : {};
 }
 
-// À utiliser comme { ...ADMIN_AXIOS, headers: authHeaders() } sur les appels admin uniquement.
-// Les routes publiques (/questions, /client, /avis) n'envoient pas le cookie.
-export const ADMIN_AXIOS = { withCredentials: true };
-
-// Les fonctions ci-dessous ne peuvent plus lire le cookie HttpOnly.
-// Elles retournent null pour éviter de casser les imports existants.
-export function parseJwtPayload() {
-  return null;
-}
-
-export function getSessionRole() {
-  return null;
-}
+export const ADMIN_AXIOS = {};

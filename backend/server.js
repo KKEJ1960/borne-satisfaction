@@ -406,22 +406,12 @@ app.post("/admin/login", loginLimiter, async (req, res) => {
       { expiresIn: "4h" }
     );
 
-    // SameSite=Lax (et non Strict) : requis pour les navigations cross-site
-    // depuis des liens externes (ex: QR code). Risque acceptable en réseau local.
-    // Passer à Strict si l'app est exposée sur internet sans proxy.
-    res.cookie("borne_admin_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 4 * 60 * 60 * 1000, // 4h en ms
-    });
-
     await logActivity(db, { adminId: admin.id, action: "LOGIN_SUCCESS", ip });
     logger.info({ role: admin.role, adminId: admin.id }, "Connexion admin réussie");
 
-    // Token absent du body — inaccessible via JS côté navigateur
     res.json({
       success: true,
+      token,
       role: admin.role,
       adminId: admin.id,
     });
@@ -436,13 +426,8 @@ app.post("/admin/login", loginLimiter, async (req, res) => {
   }
 });
 
-// P4.2 — Déconnexion propre : clear cookie + log LOGOUT
+// Déconnexion : log LOGOUT — le token est purgé côté client (mémoire React)
 app.post("/admin/logout", requireAdmin, async (req, res) => {
-  res.clearCookie("borne_admin_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
   await logActivity(db, {
     adminId: req.admin?.adminId,
     action: "LOGOUT",

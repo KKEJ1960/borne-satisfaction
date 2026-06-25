@@ -1,10 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// Lit le token depuis le cookie HttpOnly (prioritaire) ou le header Authorization (fallback)
 function extractToken(req) {
-  if (req.cookies?.borne_admin_token) {
-    return req.cookies.borne_admin_token;
-  }
   const header = req.headers.authorization;
   if (header?.startsWith("Bearer ")) {
     return header.slice(7);
