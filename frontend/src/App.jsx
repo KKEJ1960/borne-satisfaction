@@ -19,6 +19,7 @@ import ThankYouPage from "./components/ThankYouPage";
 import CategoryTransition from "./components/CategoryTransition";
 import { getNextCategory, DEPARTEMENTS } from "./constants/ratings";
 import { API_URL } from "./config/api";
+import { authHeaders, clearAdminToken } from "./config/auth";
 import { withQuestionsFallback } from "./utils/questions";
 import "./style.css";
 
@@ -153,8 +154,9 @@ function App() {
   };
 
   const handleLogout = async () => {
-    try { await axios.post(`${API_URL}/admin/logout`, {}, { withCredentials: true }); }
+    try { await axios.post(`${API_URL}/admin/logout`, {}, { headers: authHeaders() }); }
     catch { setLogoutWarning(true); }
+    clearAdminToken();
     setIsAdmin(false); setIsSuperAdmin(false); setAdminFromSuperAdmin(false);
   };
 
