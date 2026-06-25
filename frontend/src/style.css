@@ -1621,6 +1621,21 @@ html:has(.client-form-hero) {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
+/* ── Mobile : carte visible en entier, safe-area Android ──────────────────── */
+@media (max-width: 767px) {
+  .client-form-hero {
+    overflow-y: auto;
+  }
+
+  .client-form-hero-inner {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 1rem));
+  }
+
+  .client-form-shell {
+    margin-bottom: 2rem;
+  }
+}
+
 /* ── Desktop split layout : image à gauche, formulaire à droite ─────────────── */
 @media (min-width: 900px) {
   .client-form-hero {
