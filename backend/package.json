@@ -10,7 +10,8 @@
     "setup": "node run_setup.js",
     "update-chambre": "node update_chambre.js",
     "hash-password": "node scripts/hash-password.js",
-    "migrate": "node run_migrations.js"
+    "migrate": "node run_migrations.js",
+    "prod-setup": "node run_prod_setup.js"
   },
   "keywords": [],
   "author": "",
