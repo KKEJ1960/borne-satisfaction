@@ -1,19 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-@font-face {
-  font-family: 'Modern Prestige';
-  src:
-    local('Modern Prestige'),
-    url('/fonts/ModernPrestige.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --font-body: 'Inter', sans-serif;
   --font-heading: 'Playfair Display', Georgia, serif;
-  --font-prestige: 'Modern Prestige', 'Playfair Display', Georgia, serif;
+  --font-prestige: 'Playfair Display', Georgia, serif;
 }
 
 /* ——— Plein écran, sans bordures blanches ——— */
