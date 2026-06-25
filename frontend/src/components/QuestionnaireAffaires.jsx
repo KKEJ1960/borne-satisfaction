@@ -28,10 +28,23 @@ export default function QuestionnaireAffaires({ categoryQuestions = [], onFinish
     return (
       <ScreenLayout mainClassName="page-content">
         <div className="page-content-inner page-content-inner--questionnaire">
-          <p className="q-empty-message">Aucune question configurée pour le séjour professionnel.</p>
-          <button type="button" className="btn-skip-category" onClick={() => onFinish([], "")}>
-            Passer
-          </button>
+          <div className="affaires-banner">
+            <div className="affaires-banner-icon">
+              <Briefcase size={18} color="#c9a84c" />
+            </div>
+            <div className="affaires-banner-text">
+              <strong>Séjour Professionnel</strong>
+              <span>Évaluez votre expérience d'affaires à l'Hôtel Président</span>
+            </div>
+          </div>
+          <div className="q-empty-state">
+            <p className="q-empty-message">
+              Le questionnaire est temporairement indisponible. Vous pouvez continuer.
+            </p>
+            <button type="button" className="btn-skip-category" onClick={() => onFinish([], "")}>
+              Continuer
+            </button>
+          </div>
         </div>
       </ScreenLayout>
     );

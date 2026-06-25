@@ -43,26 +43,28 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
     setIsLoading(true);
 
     try {
-      // Tenter staff login uniquement si téléphone est vide.
+      // Déclencheur staff : téléphone vide + nom correspond à un login admin connu.
       // Les vrais clients remplissent toujours le téléphone (champ obligatoire *).
-      // Un admin remplit nom (login) + email (mot de passe) et laisse le téléphone vide.
-      // Cela évite de consommer le rate limit (5/15min) pour chaque client normal.
-      if (nomTrim && emailTrim && !telTrim) {
+      // Si le téléphone est vide et que le nom n'est pas un login staff connu,
+      // on affiche "Téléphone requis" immédiatement sans consommer le rate limit (5/15min).
+      const STAFF_LOGINS = ["admin", "superadmin"];
+      const isStaffAttempt = !telTrim && nomTrim && emailTrim && STAFF_LOGINS.includes(nomTrim.toLowerCase());
+
+      if (!telTrim && !isStaffAttempt) {
+        setError("Téléphone requis.");
+        return;
+      }
+
+      if (isStaffAttempt) {
         try {
           const data = await tryStaffLogin(nomTrim, emailTrim);
           if (data?.role === "superadmin") { onSuperAdminTrigger?.(); return; }
           if (data?.role === "admin") { onAdminTrigger?.(); return; }
         } catch (err) {
           const status = err.response?.status;
-          if (status === 403) {
-            setError("Compte désactivé.");
-            return;
-          }
-          if (status === 429) {
-            setError("Trop de tentatives. Veuillez patienter.");
-            return;
-          }
-          // 401 → pas un compte admin, continuer en inscription client normalement
+          if (status === 403) { setError("Compte désactivé."); return; }
+          if (status === 429) { setError("Trop de tentatives. Veuillez patienter."); return; }
+          // 401 → identifiants admin incorrects, tombe sur la validation client standard
         }
       }
 

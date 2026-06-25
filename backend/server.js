@@ -284,9 +284,67 @@ app.post("/avis", avisLimiter, async (req, res) => {
     if (clientRows.length === 0) {
       return res.status(400).json({ error: "Client invalide" });
     }
+
+    // ── C1/C2/C3 — Validation structure JSON + recalcul note ─────────────────
+    // Si le commentaire est du JSON structuré {reponses, detail}, on valide la
+    // structure, on limite le nombre de réponses (C2), et on recalcule la note
+    // côté backend pour ne pas faire confiance au frontend (C3).
+    let noteFinale = data.note;
+
+    if (data.commentaire) {
+      let parsed = null;
+      try { parsed = JSON.parse(data.commentaire); } catch { /* texte brut — déjà validé 5000 chars */ }
+
+      if (parsed !== null) {
+        // C1 — Structure attendue : { reponses: Array, detail: string }
+        if (
+          typeof parsed !== "object" ||
+          Array.isArray(parsed) ||
+          !Array.isArray(parsed.reponses) ||
+          typeof parsed.detail !== "string" ||
+          parsed.detail.length > 2000
+        ) {
+          return res.status(400).json({ error: "Données invalides." });
+        }
+        for (const r of parsed.reponses) {
+          if (
+            typeof r.question !== "string" ||
+            r.question.length > 500 ||
+            typeof r.note !== "number" ||
+            r.note < 1 || r.note > 4
+          ) {
+            return res.status(400).json({ error: "Données invalides." });
+          }
+        }
+
+        // C2 — Nombre de réponses limité au nb de questions actives (Tourisme Affaires)
+        if (data.departement === "Tourisme Affaires") {
+          const [qRows] = await db.query(
+            "SELECT COUNT(*) AS cnt FROM questions WHERE categorie = 'Tourisme Affaires' AND actif = true"
+          );
+          const maxQ = qRows[0].cnt;
+          if (parsed.reponses.length > maxQ) {
+            return res.status(400).json({ error: "Données invalides." });
+          }
+        }
+
+        // C3 — Recalcul de la note : ignore la valeur envoyée par le frontend
+        if (parsed.reponses.length > 0) {
+          const standard = parsed.reponses.filter((r) => !r.type);
+          const toAvg = standard.length ? standard : parsed.reponses;
+          const avg = toAvg.reduce((s, r) => s + r.note, 0) / toAvg.length;
+          noteFinale = Math.max(1, Math.min(4, Math.round(avg)));
+        } else if (data.note > 0) {
+          // reponses vides mais note > 0 : incohérent
+          return res.status(400).json({ error: "Données invalides." });
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const [result] = await db.query(
       "INSERT INTO avis (client_id, departement, note, commentaire) VALUES (?, ?, ?, ?)",
-      [data.client_id, data.departement, data.note, data.commentaire]
+      [data.client_id, data.departement, noteFinale, data.commentaire]
     );
     res.status(201).json({ id: result.insertId, message: "Avis enregistré" });
   } catch (error) {
@@ -348,6 +406,9 @@ app.post("/admin/login", loginLimiter, async (req, res) => {
       { expiresIn: "4h" }
     );
 
+    // SameSite=Lax (et non Strict) : requis pour les navigations cross-site
+    // depuis des liens externes (ex: QR code). Risque acceptable en réseau local.
+    // Passer à Strict si l'app est exposée sur internet sans proxy.
     res.cookie("borne_admin_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -573,7 +634,7 @@ app.get("/admin/export/csv", requireAdmin, async (req, res) => {
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "EXPORT_CSV",
-      details: JSON.stringify({ rows: rows.length, filters: req.query }),
+      details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
     });
     res.send(csv);
@@ -593,7 +654,7 @@ app.get("/admin/export/excel", requireAdmin, async (req, res) => {
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "EXPORT_EXCEL",
-      details: JSON.stringify({ rows: rows.length }),
+      details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
     });
     res.send(Buffer.from(buffer));
@@ -613,7 +674,7 @@ app.get("/admin/export/pdf", requireAdmin, async (req, res) => {
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "EXPORT_PDF",
-      details: JSON.stringify({ rows: rows.length }),
+      details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
     });
     res.send(buffer);
