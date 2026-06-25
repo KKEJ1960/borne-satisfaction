@@ -1569,17 +1569,18 @@ html:has(.client-form-hero) {
 }
 
 .client-form-hero-media {
-  position: fixed;
+  position: absolute;
   inset: 0;
   width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 100%;
   z-index: 0;
   overflow: hidden;
   background-color: #4a7fb5;
   background-image: url("/fond-hotel.jpg");
   background-size: cover;
   background-position: center top;
+  background-attachment: scroll;
   background-repeat: no-repeat;
 }
 
@@ -1705,14 +1706,13 @@ html:has(.client-form-hero) {
 }
 
 .client-form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .client-form-row > div {
-  flex: 1;
-  min-width: 160px;
+  min-width: 0;
 }
 
 .client-form-shell label {
@@ -2601,11 +2601,7 @@ html:has(.client-form-hero) {
   }
 
   .client-form-row {
-    flex-direction: column;
-  }
-
-  .client-form-row > div {
-    min-width: 100%;
+    grid-template-columns: 1fr;
   }
 
   .synthese-client-grid {
@@ -5144,7 +5140,7 @@ textarea:focus {
   gap: 7px;
   padding: 11px 10px;
   border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 50px;
   background: #f8fafc;
   color: #64748b;
   font-size: 0.82rem;
