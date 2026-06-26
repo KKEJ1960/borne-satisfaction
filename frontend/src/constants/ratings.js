@@ -143,10 +143,77 @@ export const CATEGORIES_META = {
 };
 
 /** Toutes les catégories gérées dans le panel admin (loisirs + affaires) */
-export const ALL_ADMIN_CATEGORIES = [...DEPARTEMENTS, "Tourisme Affaires"];
+export const ALL_ADMIN_CATEGORIES = [...DEPARTEMENTS, "Commercial"];
 
 export function getNextCategory(currentDept) {
   const i = DEPARTEMENTS.indexOf(currentDept);
   if (i < 0 || i >= DEPARTEMENTS.length - 1) return null;
   return DEPARTEMENTS[i + 1];
+}
+
+// ── Parcours Affaires ─────────────────────────────────────────────────────────
+export const DEPARTEMENTS_AFFAIRES = [
+  "Accueil",
+  "Chambres",
+  "Commercial",
+  "Restaurants",
+  "Loisirs et Divertissements",
+  "Cadre Général",
+];
+
+export const AFFAIRES_CATEGORIES_META = {
+  Accueil: {
+    step: 1,
+    shortName: "Accueil",
+    tagline: "Votre arrivée à l'hôtel",
+    intro: "Commençons par l'accueil.",
+    doneTitle: "Accueil évalué.",
+    doneText: "Merci. Place aux chambres.",
+  },
+  Chambres: {
+    step: 2,
+    shortName: "Chambres",
+    tagline: "Confort & hébergement",
+    intro: "Évaluons votre chambre.",
+    doneTitle: "Chambre évaluée.",
+    doneText: "Passons aux services commerciaux.",
+  },
+  Commercial: {
+    step: 3,
+    shortName: "Commercial",
+    tagline: "Services & espaces professionnels",
+    intro: "Services professionnels & commerciaux.",
+    doneTitle: "Services évalués.",
+    doneText: "Direction la restauration.",
+  },
+  Restaurants: {
+    step: 4,
+    shortName: "Restauration",
+    tagline: "Restauration & petits-déjeuners",
+    intro: "Votre expérience en restauration.",
+    doneTitle: "Restauration évaluée.",
+    doneText: "Continuons avec les loisirs.",
+  },
+  "Loisirs et Divertissements": {
+    step: 5,
+    shortName: "Loisirs",
+    tagline: "Activités & bien-être",
+    intro: "Activités & loisirs de l'hôtel.",
+    doneTitle: "Loisirs évalués.",
+    doneText: "Dernière étape : le cadre général.",
+  },
+  "Cadre Général": {
+    step: 6,
+    shortName: "Cadre",
+    tagline: "Environnement & cadre de vie",
+    intro: "Dernière évaluation : le cadre général.",
+    doneTitle: "Cadre général évalué.",
+    doneText: "Toutes les catégories sont complètes.",
+  },
+};
+
+export function getNextCategoryAffaires(currentDept) {
+  const i = DEPARTEMENTS_AFFAIRES.indexOf(currentDept);
+  if (i < 0 || i >= DEPARTEMENTS_AFFAIRES.length - 1) return null;
+  return DEPARTEMENTS_AFFAIRES[i + 1];
 }

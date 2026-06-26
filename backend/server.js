@@ -70,7 +70,7 @@ const logger = pino({
 });
 
 // ── Constantes métier ─────────────────────────────────────────────────────────
-const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires"];
+const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires", "Commercial", "Restaurants"];
 const VALID_DEPARTEMENTS = [...CATEGORIES, "Global"];
 
 // ── P3.2 / P3.3 — Validation helpers ─────────────────────────────────────────

@@ -114,6 +114,8 @@ const CATEGORIES_FILTER = [
   "L'Alocodrome",
   "Loisirs et Divertissements",
   "Cadre Général",
+  "Commercial",
+  "Restaurants",
   "Tourisme Affaires",
   "Global",
 ];

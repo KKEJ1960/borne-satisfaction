@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Briefcase } from "lucide-react";
 import { RATING_OPTIONS, CATEGORIES_META, DEPARTEMENTS } from "../constants/ratings";
 import { getQuestionText } from "../utils/questions";
 import ScreenLayout from "./ScreenLayout";
@@ -21,14 +21,18 @@ export default function QuestionnaireScreen({
   onReponse,
   skippedSteps = [],
   completedDepts = [],
+  variant = "",
+  categoriesMeta = CATEGORIES_META,
+  totalSteps = DEPARTEMENTS.length,
 }) {
   const [index, setIndex] = useState(startAtQuestion || 0);
   const [reponses, setReponses] = useState(savedReponses || []);
   const [showIntro, setShowIntro] = useState(startAtQuestion === 0);
 
-  const meta = CATEGORIES_META[deptName];
+  const meta = categoriesMeta[deptName];
   const hasQuestions = Array.isArray(questions) && questions.length > 0;
   const currentText = hasQuestions ? getQuestionText(questions[index]) : "";
+  const isAffaires = variant === "affaires";
 
   useEffect(() => {
     if (startAtQuestion === 0) {
@@ -56,7 +60,7 @@ export default function QuestionnaireScreen({
 
   if (!hasQuestions) {
     return (
-      <ScreenLayout mainClassName="page-content">
+      <ScreenLayout mainClassName="page-content" variant={variant}>
         <div className="page-content-inner page-content-inner--questionnaire">
           <p className="q-empty-message">Aucune question configurée pour cette catégorie.</p>
           <button type="button" className="btn-skip-category" onClick={onBack}>
@@ -70,18 +74,25 @@ export default function QuestionnaireScreen({
   const questionProgress = ((index + 1) / questions.length) * 100;
 
   return (
-    <ScreenLayout mainClassName="page-content">
+    <ScreenLayout mainClassName="page-content" variant={variant}>
       <div className="page-content-inner page-content-inner--questionnaire">
-        <CategoryJourney
-          currentDept={deptName}
-          skippedSteps={skippedSteps}
-          completedDepts={completedDepts}
-        />
+        {isAffaires ? (
+          <div className="affaires-badge">
+            <Briefcase size={11} />
+            Affaires / Professionnel
+          </div>
+        ) : (
+          <CategoryJourney
+            currentDept={deptName}
+            skippedSteps={skippedSteps}
+            completedDepts={completedDepts}
+          />
+        )}
 
-        {showIntro && (
+        {showIntro && meta && (
           <div className="category-intro-banner" role="status">
             <div className="category-intro-icon">
-              <Icon size={22} color="#ffffff" />
+              {Icon && <Icon size={22} color="#ffffff" />}
             </div>
             <div>
               <strong>{meta.intro}</strong>
@@ -93,16 +104,16 @@ export default function QuestionnaireScreen({
         <div className={`q-category-zone q-category-zone--${deptStep}`}>
           <div className="q-category-zone-label">
             <span className="q-category-pill">
-              Catégorie {deptStep}/{DEPARTEMENTS.length} · <em>{deptName}</em>
+              Catégorie {deptStep}/{totalSteps} · <em>{deptName}</em>
             </span>
           </div>
 
           <div className="q-dept-header">
             <div className="q-dept-icon q-dept-icon--pulse">
-              <Icon size={24} color="#ffffff" />
+              {Icon && <Icon size={24} color="#ffffff" />}
             </div>
             <h2 className="q-dept-title">{deptName}</h2>
-            <p className="q-dept-tagline">{meta.tagline}</p>
+            {meta && <p className="q-dept-tagline">{meta.tagline}</p>}
           </div>
 
           <div className="q-question-progress-wrap">

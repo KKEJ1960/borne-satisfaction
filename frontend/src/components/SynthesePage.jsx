@@ -11,6 +11,8 @@ import {
   Palmtree,
   Sparkles,
   MessageSquare,
+  Briefcase,
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   NOTE_LABELS,
@@ -31,6 +33,8 @@ const CATEGORY_ICONS = {
   "L'Alocodrome": Flame,
   "Loisirs et Divertissements": Palmtree,
   "Cadre Général": Sparkles,
+  Commercial: Briefcase,
+  Restaurants: UtensilsCrossed,
 };
 
 function NoteBadge({ note, compact }) {
@@ -91,6 +95,8 @@ export default function SynthesePage({
   onUpdateCommentaireGlobal,
   onConfirm,
   client,
+  departements = DEPARTEMENTS,
+  variant = "",
 }) {
   const [editingResponse, setEditingResponse] = useState(null);
   const [editingComment, setEditingComment] = useState(false);
@@ -212,7 +218,7 @@ export default function SynthesePage({
   };
 
   return (
-    <ScreenLayout mainClassName="synthese-page">
+    <ScreenLayout mainClassName="synthese-page" variant={variant}>
       <div className="synthese-page-inner">
         <header className="synthese-header">
           <div className="synthese-header-icon">
@@ -255,7 +261,7 @@ export default function SynthesePage({
         </section>
 
         <div className="synthese-categories">
-          {DEPARTEMENTS.map((dept) => {
+          {departements.map((dept) => {
             const Icon = CATEGORY_ICONS[dept];
             const deptData = allReponses[dept];
             const hasResponses = deptData?.reponses?.length > 0;

@@ -5261,3 +5261,277 @@ textarea:focus {
   border: 1px solid #a7f3d0;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   THÈME AFFAIRES — dark corporate / gold
+   La classe .theme-affaires est posée sur .screen-page via ScreenLayout
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Variables du thème */
+.theme-affaires {
+  --aff-bg:       #0D0D0D;
+  --aff-surface:  #141414;
+  --aff-card:     #1a1a1a;
+  --aff-gold:     #C9A84C;
+  --aff-gold-dim: rgba(201,168,76,0.18);
+  --aff-gold-border: rgba(201,168,76,0.35);
+  --aff-text:     #F5F5F0;
+  --aff-muted:    rgba(245,245,240,0.55);
+  --aff-subtle:   rgba(245,245,240,0.2);
+}
+
+/* Fond général */
+.theme-affaires,
+.theme-affaires .screen-page-main,
+.theme-affaires .page-content {
+  background: var(--aff-bg);
+}
+
+/* En-tête global */
+.theme-affaires .global-header {
+  background: #0a0a0a;
+  color: var(--aff-gold);
+  border-bottom: 1px solid var(--aff-gold-border);
+  letter-spacing: 0.04em;
+}
+
+/* ── Questionnaire ─────────────────────────────────── */
+
+/* Badge Affaires / Professionnel */
+.affaires-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--aff-gold-dim);
+  border: 1px solid var(--aff-gold-border);
+  color: var(--aff-gold);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 10px;
+  border-radius: 50px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+/* Bannière intro catégorie */
+.theme-affaires .category-intro-banner {
+  background: var(--aff-gold-dim);
+  border: 1px solid var(--aff-gold-border);
+  color: var(--aff-text);
+}
+.theme-affaires .category-intro-banner strong {
+  color: var(--aff-text);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .category-intro-banner span {
+  color: var(--aff-muted);
+}
+
+/* Zone catégorie — remplace le fond coloré par défaut */
+.theme-affaires .q-category-zone {
+  background: var(--aff-card) !important;
+  border: 1px solid var(--aff-gold-border);
+}
+
+/* Pill catégorie */
+.theme-affaires .q-category-pill {
+  background: var(--aff-gold-dim);
+  color: var(--aff-gold);
+  border: 1px solid var(--aff-gold-border);
+  font-weight: 600;
+}
+
+/* Icône département */
+.theme-affaires .q-dept-icon {
+  background: var(--aff-gold-dim);
+  border: 1.5px solid var(--aff-gold-border);
+}
+
+/* Titres et textes */
+.theme-affaires .q-dept-title {
+  color: var(--aff-text);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .q-dept-tagline {
+  color: var(--aff-muted);
+}
+.theme-affaires .q-question-text {
+  color: var(--aff-text);
+  font-family: var(--font-body);
+}
+
+/* Barre de progression — or */
+.theme-affaires .q-question-progress-bar {
+  background: rgba(255,255,255,0.08);
+}
+.theme-affaires .q-question-progress-fill {
+  background: var(--aff-gold);
+}
+.theme-affaires .q-question-progress-label {
+  color: var(--aff-muted);
+}
+
+/* Cartes de notation */
+.theme-affaires .q-rating-card {
+  background: var(--aff-surface) !important;
+  border: 1.5px solid rgba(201,168,76,0.2) !important;
+  color: var(--aff-text);
+}
+.theme-affaires .q-rating-card:hover,
+.theme-affaires .q-rating-card:focus {
+  border-color: var(--aff-gold) !important;
+  background: var(--aff-gold-dim) !important;
+  transform: translateY(-2px);
+}
+.theme-affaires .q-rating-label {
+  color: var(--aff-text);
+}
+
+/* Bouton "Passer" */
+.theme-affaires .btn-skip-category {
+  color: var(--aff-subtle);
+  border-color: var(--aff-subtle);
+}
+.theme-affaires .btn-skip-category:hover {
+  color: var(--aff-muted);
+  border-color: var(--aff-muted);
+}
+
+/* ── CategoryTransition ────────────────────────────── */
+.theme-affaires .category-transition-page {
+  background: var(--aff-bg);
+}
+.theme-affaires .category-transition-card {
+  background: var(--aff-surface);
+  border: 1px solid var(--aff-gold-border);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.6);
+}
+.theme-affaires .category-transition-done-title {
+  color: var(--aff-text);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .category-transition-done-text {
+  color: var(--aff-muted);
+}
+.theme-affaires .category-transition-progress {
+  color: var(--aff-subtle);
+}
+.theme-affaires .category-transition-next-label {
+  color: var(--aff-muted);
+}
+.theme-affaires .category-transition-arrow {
+  color: var(--aff-gold);
+}
+.theme-affaires .category-transition-next-box {
+  background: var(--aff-gold-dim);
+  border: 1px solid var(--aff-gold-border);
+  color: var(--aff-text);
+}
+.theme-affaires .category-transition-next-box strong {
+  color: var(--aff-gold);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .category-transition-next-box span {
+  color: var(--aff-muted);
+}
+.theme-affaires .category-transition-next-hint {
+  color: var(--aff-muted);
+}
+.theme-affaires .category-transition-icon-badge {
+  background: var(--aff-gold-dim);
+  border-color: var(--aff-gold-border);
+}
+/* Bouton CTA sur la transition */
+.theme-affaires .category-transition-btn {
+  background: var(--aff-gold) !important;
+  color: #0D0D0D !important;
+  border-color: var(--aff-gold) !important;
+  font-weight: 700;
+}
+.theme-affaires .category-transition-btn:hover {
+  background: #d4b85e !important;
+  border-color: #d4b85e !important;
+}
+
+/* ── SynthesePage — Affaires ───────────────────────── */
+.theme-affaires .synthese-page {
+  background: var(--aff-bg);
+}
+.theme-affaires .synthese-page-inner {
+  background: var(--aff-bg);
+}
+.theme-affaires .synthese-header-icon {
+  background: var(--aff-gold-dim);
+  border-color: var(--aff-gold-border);
+}
+.theme-affaires .synthese-header-icon svg {
+  color: var(--aff-gold) !important;
+}
+.theme-affaires .synthese-title {
+  color: var(--aff-text);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .synthese-subtitle {
+  color: var(--aff-muted);
+}
+.theme-affaires .synthese-card {
+  background: var(--aff-card);
+  border: 1px solid var(--aff-gold-border);
+  color: var(--aff-text);
+}
+.theme-affaires .synthese-card-title,
+.theme-affaires .synthese-category-title h3 {
+  color: var(--aff-text);
+  font-family: var(--font-prestige);
+}
+.theme-affaires .synthese-label {
+  color: var(--aff-muted);
+}
+.theme-affaires .synthese-card p {
+  color: var(--aff-text);
+}
+.theme-affaires .synthese-question-text {
+  color: var(--aff-muted);
+}
+.theme-affaires .synthese-category-icon svg {
+  color: var(--aff-gold) !important;
+}
+.theme-affaires .synthese-footer-note {
+  color: var(--aff-muted);
+}
+.theme-affaires .btn-send {
+  background: var(--aff-gold) !important;
+  color: #0D0D0D !important;
+  border-color: var(--aff-gold) !important;
+  font-weight: 700;
+}
+.theme-affaires .btn-secondary-compact {
+  border-color: var(--aff-gold-border);
+  color: var(--aff-muted);
+}
+.theme-affaires .synthese-textarea {
+  background: var(--aff-surface);
+  color: var(--aff-text);
+  border-color: var(--aff-gold-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VALIDATION CHAMPS CLIENTFORM
+   ═══════════════════════════════════════════════════════════════ */
+.field-error-input {
+  border-color: #dc2626 !important;
+  background-color: #fff5f5 !important;
+  outline: none;
+}
+.field-error-input:focus {
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.18);
+}
+.field-error-msg {
+  display: block;
+  color: #dc2626;
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin-top: 4px;
+  letter-spacing: 0.01em;
+}
+

@@ -8,6 +8,7 @@ import {
   Sparkles,
   MessageSquare,
   Briefcase,
+  UtensilsCrossed,
 } from "lucide-react";
 
 const ICONS = {
@@ -19,6 +20,8 @@ const ICONS = {
   "Loisirs et Divertissements": Palmtree,
   "Cadre Général": Sparkles,
   "Tourisme Affaires": Briefcase,
+  Commercial: Briefcase,
+  Restaurants: UtensilsCrossed,
   Commentaire: MessageSquare,
 };
 

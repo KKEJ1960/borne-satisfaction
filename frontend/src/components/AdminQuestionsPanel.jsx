@@ -30,6 +30,7 @@ const CATEGORY_COLORS = {
   "Loisirs et Divertissements": { from: "#3b1a5f", to: "#5b2d8e", dot: "#c4b5fd" },
   "Cadre Général": { from: "#4a1a0a", to: "#7c2d12", dot: "#fdba74" },
   "Tourisme Affaires": { from: "#0c2340", to: "#17375e", dot: "#c9a84c" },
+  Commercial: { from: "#0D0D0D", to: "#1a1a1a", dot: "#C9A84C" },
 };
 
 function activeForClient(all) {

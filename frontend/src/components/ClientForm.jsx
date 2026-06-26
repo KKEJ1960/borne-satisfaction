@@ -16,10 +16,14 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
   const [typeSejour, setTypeSejour] = useState("loisirs");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const tryStaffLogin = async (login, password) => {
@@ -37,21 +41,26 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
     const emailTrim = formData.email.trim();
 
     setError("");
+
+    // Déclencheur staff : téléphone vide + nom correspond à un login admin connu.
+    const STAFF_LOGINS = ["admin", "superadmin"];
+    const isStaffAttempt = !telTrim && nomTrim && emailTrim && STAFF_LOGINS.includes(nomTrim.toLowerCase());
+
+    // Validation champs pour clients réels uniquement
+    if (!isStaffAttempt) {
+      const errors = {};
+      if (!prenomTrim) errors.prenom = "Prénom requis.";
+      if (!nomTrim)    errors.nom    = "Nom requis.";
+      if (!telTrim)    errors.telephone = "Téléphone requis.";
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      // Déclencheur staff : téléphone vide + nom correspond à un login admin connu.
-      // Les vrais clients remplissent toujours le téléphone (champ obligatoire *).
-      // Si le téléphone est vide et que le nom n'est pas un login staff connu,
-      // on affiche "Téléphone requis" immédiatement sans consommer le rate limit (5/15min).
-      const STAFF_LOGINS = ["admin", "superadmin"];
-      const isStaffAttempt = !telTrim && nomTrim && emailTrim && STAFF_LOGINS.includes(nomTrim.toLowerCase());
-
-      if (!telTrim && !isStaffAttempt) {
-        setError("Téléphone requis.");
-        return;
-      }
-
       if (isStaffAttempt) {
         try {
           const data = await tryStaffLogin(nomTrim, emailTrim);
@@ -61,14 +70,13 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
           const status = err.response?.status;
           if (status === 403) { setError("Compte désactivé."); return; }
           if (status === 429) { setError("Trop de tentatives. Veuillez patienter."); return; }
-          // 401 → identifiants admin incorrects, tombe sur la validation client standard
+          // 401 → identifiants admin incorrects, retombe sur la validation client standard
+          const errors = {};
+          if (!prenomTrim) errors.prenom = "Prénom requis.";
+          if (!nomTrim)    errors.nom    = "Nom requis.";
+          if (!telTrim)    errors.telephone = "Téléphone requis.";
+          if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
         }
-      }
-
-      // Inscription client standard
-      if (!nomTrim || !prenomTrim || !telTrim) {
-        setError("Veuillez remplir tous les champs obligatoires (*)");
-        return;
       }
 
       const response = await axios.post(`${API_URL}/client`, {
@@ -123,7 +131,9 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                   onChange={handleChange}
                   autoComplete="off"
                   required
+                  className={fieldErrors.prenom ? "field-error-input" : ""}
                 />
+                {fieldErrors.prenom && <span className="field-error-msg">{fieldErrors.prenom}</span>}
               </div>
               <div>
                 <label htmlFor="nom">Nom *</label>
@@ -135,7 +145,9 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                   onChange={handleChange}
                   autoComplete="off"
                   required
+                  className={fieldErrors.nom ? "field-error-input" : ""}
                 />
+                {fieldErrors.nom && <span className="field-error-msg">{fieldErrors.nom}</span>}
               </div>
             </div>
             <div>
@@ -148,7 +160,9 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                 onChange={handleChange}
                 autoComplete="off"
                 required
+                className={fieldErrors.telephone ? "field-error-input" : ""}
               />
+              {fieldErrors.telephone && <span className="field-error-msg">{fieldErrors.telephone}</span>}
             </div>
             <div>
               <label htmlFor="numero_chambre">N° chambre (optionnel)</label>

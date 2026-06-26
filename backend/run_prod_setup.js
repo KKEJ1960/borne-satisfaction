@@ -133,7 +133,7 @@ const DEFAULT_QUESTIONS = {
   ],
 };
 
-// ENUM complet v2 — valeur littérale pour le SQL
+// ENUM complet v3 — valeur littérale pour le SQL
 const ENUM_V2 = `ENUM(
   'Accueil',
   'Chambres',
@@ -142,7 +142,8 @@ const ENUM_V2 = `ENUM(
   'L''Alocodrome',
   'Loisirs et Divertissements',
   'Cadre Général',
-  'Tourisme Affaires'
+  'Tourisme Affaires',
+  'Commercial'
 ) NOT NULL`;
 
 // ── Résumé des actions ────────────────────────────────────────────────────────
@@ -316,11 +317,11 @@ async function main() {
   console.log("\n📋 Étape 3 — ENUM questions.categorie");
 
   const currentEnum = await getEnumType(conn, dbName, "questions", "categorie");
-  const needsEnum = !currentEnum.includes("Tourisme Affaires") || !currentEnum.includes("Le Bandama");
+  const needsEnum = !currentEnum.includes("Tourisme Affaires") || !currentEnum.includes("Le Bandama") || !currentEnum.includes("Commercial");
 
   if (needsEnum) {
     await conn.query(`ALTER TABLE questions MODIFY categorie ${ENUM_V2}`);
-    ok("ENUM questions.categorie mis à jour (v2 complète)");
+    ok("ENUM questions.categorie mis à jour (v3 : + Commercial)");
   } else {
     skip("ENUM questions.categorie déjà à jour");
   }

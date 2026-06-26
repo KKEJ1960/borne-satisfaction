@@ -11,13 +11,23 @@ import QuestionnairePanoramique from "./components/QuestionnairePanoramique";
 import QuestionnaireAlocodrome from "./components/QuestionnaireAlocodrome";
 import QuestionnaireLoisirs from "./components/QuestionnaireLoisirs";
 import QuestionnaireCadreGeneral from "./components/QuestionnaireCadreGeneral";
-import QuestionnaireAffaires from "./components/QuestionnaireAffaires";
-import SyntheseAffaires from "./components/SyntheseAffaires";
+import QuestionnaireAccueilAffaires from "./components/QuestionnaireAccueilAffaires";
+import QuestionnaireChambreAffaires from "./components/QuestionnaireChambreAffaires";
+import QuestionnaireCommercial from "./components/QuestionnaireCommercial";
+import QuestionnaireRestaurantsAffaires from "./components/QuestionnaireRestaurantsAffaires";
+import QuestionnaireLoisirsDivertissementsAffaires from "./components/QuestionnaireLoisirsDivertissementsAffaires";
+import QuestionnaireCadreGeneralAffaires from "./components/QuestionnaireCadreGeneralAffaires";
 import CommentaireFinal from "./components/CommentaireFinal";
 import SynthesePage from "./components/SynthesePage";
 import ThankYouPage from "./components/ThankYouPage";
 import CategoryTransition from "./components/CategoryTransition";
-import { getNextCategory, DEPARTEMENTS } from "./constants/ratings";
+import {
+  getNextCategory,
+  DEPARTEMENTS,
+  getNextCategoryAffaires,
+  DEPARTEMENTS_AFFAIRES,
+  AFFAIRES_CATEGORIES_META,
+} from "./constants/ratings";
 import { API_URL } from "./config/api";
 import { authHeaders, clearAdminToken } from "./config/auth";
 import { withQuestionsFallback } from "./utils/questions";
@@ -25,6 +35,9 @@ import "./style.css";
 
 const makeInitialReponses = () =>
   Object.fromEntries(DEPARTEMENTS.map((d) => [d, { reponses: [], currentQuestion: 0, commentaire: "" }]));
+
+const makeInitialReponsesAffaires = () =>
+  Object.fromEntries(DEPARTEMENTS_AFFAIRES.map((d) => [d, { reponses: [], currentQuestion: 0, commentaire: "" }]));
 
 const PREVIOUS_DEPT = Object.fromEntries(
   DEPARTEMENTS.slice(1).map((d, i) => [d, DEPARTEMENTS[i]])
@@ -48,7 +61,10 @@ function App() {
   const [logoutWarning, setLogoutWarning] = useState(false);
 
   // ── États flux Affaires ───────────────────────────────────────────────────
-  const [affairesReponses, setAffairesReponses] = useState([]);
+  const [affairesDepartement, setAffairesDepartement] = useState(null);
+  const [allReponsesAffaires, setAllReponsesAffaires] = useState(makeInitialReponsesAffaires);
+  const [skippedStepsAffaires, setSkippedStepsAffaires] = useState([]);
+  const [categoryTransitionAffaires, setCategoryTransitionAffaires] = useState(null);
   const [commentaireAffaires, setCommentaireAffaires] = useState("");
   const [showSyntheseAffaires, setShowSyntheseAffaires] = useState(false);
 
@@ -150,7 +166,13 @@ function App() {
     setClient(null); setDone(false); setDepartement(null); setShowWelcome(true);
     setSkippedSteps([]); setAllReponses(makeInitialReponses());
     setCommentaireGlobal(""); setShowSynthese(false);
-    setAffairesReponses([]); setCommentaireAffaires(""); setShowSyntheseAffaires(false);
+    // Affaires reset
+    setAffairesDepartement(null);
+    setAllReponsesAffaires(makeInitialReponsesAffaires());
+    setSkippedStepsAffaires([]);
+    setCategoryTransitionAffaires(null);
+    setCommentaireAffaires("");
+    setShowSyntheseAffaires(false);
   };
 
   const handleLogout = async () => {
@@ -197,13 +219,30 @@ function App() {
     setClient(clientData);
     if (clientData.type_sejour === "affaires") {
       setShowWelcome(false);
-      setDepartement("Affaires");
+      setAffairesDepartement("Accueil");
     }
   };
 
-  const handleAffairesFinish = (reponses) => {
-    setAffairesReponses(reponses);
-    setDepartement("Commentaire");
+  const handleQuestionnaireAffairesFinish = (reponses, commentaire) => {
+    setAllReponsesAffaires(prev => ({
+      ...prev,
+      [affairesDepartement]: { reponses, commentaire, currentQuestion: reponses.length },
+    }));
+    const next = getNextCategoryAffaires(affairesDepartement);
+    setCategoryTransitionAffaires({ type: "complete", fromDept: affairesDepartement, toDept: next || "Commentaire" });
+  };
+
+  const handleSkipCategoryAffaires = () => {
+    setSkippedStepsAffaires(prev => [...prev, affairesDepartement]);
+    const next = getNextCategoryAffaires(affairesDepartement);
+    setCategoryTransitionAffaires({ type: "skip", fromDept: affairesDepartement, toDept: next || "Commentaire" });
+  };
+
+  const goAfterCategoryTransitionAffaires = () => {
+    const to = categoryTransitionAffaires?.toDept;
+    setCategoryTransitionAffaires(null);
+    if (!to || to === "Commentaire") { setAffairesDepartement("Commentaire"); return; }
+    setAffairesDepartement(to);
   };
 
   const handleCommentaireAffaires = (commentaire) => {
@@ -213,19 +252,21 @@ function App() {
 
   const handleSendAffairesData = async () => {
     if (!client?.id) throw new Error("Client non identifié.");
-    if (!affairesReponses.length) throw new Error("Aucune réponse à envoyer.");
 
-    const moyenne = affairesReponses.reduce((s, r) => s + r.note, 0) / affairesReponses.length;
-    const noteFinale = Math.max(1, Math.min(4, Math.round(moyenne)));
-
-    const requests = [
-      axios.post(`${API_URL}/avis`, {
-        client_id: client.id,
-        departement: "Tourisme Affaires",
-        note: noteFinale,
-        commentaire: JSON.stringify({ reponses: affairesReponses, detail: commentaireAffaires }),
-      }),
-    ];
+    const requests = Object.entries(allReponsesAffaires)
+      .filter(([, data]) => data.reponses?.length > 0)
+      .map(([dept, data]) => {
+        const standard = data.reponses.filter(r => !r.type);
+        const toAvg = standard.length ? standard : data.reponses;
+        const moyenne = toAvg.reduce((s, r) => s + (r.note || 0), 0) / toAvg.length;
+        const noteFinale = Math.max(1, Math.min(4, Math.round(moyenne)));
+        return axios.post(`${API_URL}/avis`, {
+          client_id: client.id,
+          departement: dept,
+          note: noteFinale,
+          commentaire: JSON.stringify({ reponses: data.reponses, detail: data.commentaire || "" }),
+        });
+      });
 
     if (commentaireAffaires?.trim()) {
       requests.push(axios.post(`${API_URL}/avis`, {
@@ -236,15 +277,28 @@ function App() {
       }));
     }
 
+    if (requests.length === 0) throw new Error("Aucune réponse à envoyer.");
     await Promise.all(requests);
     setDone(true);
     setShowSyntheseAffaires(false);
   };
 
-  const handleUpdateAffairesReponse = (idx, note) => {
-    setAffairesReponses(prev => prev.map((r, i) => i === idx ? { ...r, note } : r));
+  const handleUpdateAffairesReponse = (dept, questionIndex, newNote) => {
+    setAllReponsesAffaires(prev => ({
+      ...prev,
+      [dept]: {
+        ...prev[dept],
+        reponses: prev[dept].reponses.map((r, i) => i === questionIndex ? { ...r, note: newNote } : r),
+      },
+    }));
   };
 
+  const handleSetAffairesCategoryReponses = (dept, reponses, commentaire = "") => {
+    setAllReponsesAffaires(prev => ({ ...prev, [dept]: { reponses, commentaire, currentQuestion: reponses.length } }));
+    setSkippedStepsAffaires(prev => prev.filter(d => d !== dept));
+  };
+
+  // ── Shared props helpers ──────────────────────────────────────────────────
   const sharedProps = (dept) => ({
     categoryQuestions: questions[dept] || [],
     onFinish: handleQuestionnaireFinish,
@@ -256,6 +310,29 @@ function App() {
     onReponse: (question, note) => handleReponse(dept, question, note),
     skippedSteps,
     completedDepts: getCompletedDepts(),
+  });
+
+  const restaurantsAffairesQuestions = [
+    ...(questions["Le Bandama Petit Déjeuner"] || []),
+    ...(questions["Le Panoramique"] || []),
+  ];
+
+  const questionsForAffaires = {
+    Accueil: questions["Accueil"] || [],
+    Chambres: questions["Chambres"] || [],
+    Commercial: questions["Commercial"] || [],
+    Restaurants: restaurantsAffairesQuestions,
+    "Loisirs et Divertissements": questions["Loisirs et Divertissements"] || [],
+    "Cadre Général": questions["Cadre Général"] || [],
+  };
+
+  const sharedPropsAffaires = (dept) => ({
+    categoryQuestions: questionsForAffaires[dept] || [],
+    onFinish: handleQuestionnaireAffairesFinish,
+    onBack: handleSkipCategoryAffaires,
+    variant: "affaires",
+    categoriesMeta: AFFAIRES_CATEGORIES_META,
+    totalSteps: DEPARTEMENTS_AFFAIRES.length,
   });
 
   if (questionsLoading) {
@@ -289,26 +366,48 @@ function App() {
       ) : done ? (
         <ThankYouPage client={client} onBack={handleBackToClient} />
       ) : isAffaires ? (
-        /* ── Flux Tourisme d'affaires ── */
+        /* ── Flux Affaires / Professionnel — 6 catégories ── */
         showSyntheseAffaires ? (
-          <SyntheseAffaires
-            reponses={affairesReponses}
-            commentaire={commentaireAffaires}
+          <SynthesePage
+            allReponses={allReponsesAffaires}
+            commentaireGlobal={commentaireAffaires}
+            skippedSteps={skippedStepsAffaires}
+            questions={questionsForAffaires}
             client={client}
             onUpdateReponse={handleUpdateAffairesReponse}
-            onUpdateCommentaire={setCommentaireAffaires}
+            onSetCategoryReponses={handleSetAffairesCategoryReponses}
+            onUpdateCommentaireGlobal={setCommentaireAffaires}
             onConfirm={handleSendAffairesData}
+            departements={DEPARTEMENTS_AFFAIRES}
+            variant="affaires"
           />
-        ) : departement === "Commentaire" ? (
-          <CommentaireFinal onFinish={handleCommentaireAffaires} />
-        ) : (
-          <QuestionnaireAffaires
-            categoryQuestions={questions["Tourisme Affaires"] || []}
-            onFinish={handleAffairesFinish}
+        ) : categoryTransitionAffaires ? (
+          <CategoryTransition
+            type={categoryTransitionAffaires.type}
+            fromDept={categoryTransitionAffaires.fromDept}
+            toDept={categoryTransitionAffaires.toDept}
+            onContinue={goAfterCategoryTransitionAffaires}
+            categoriesMeta={AFFAIRES_CATEGORIES_META}
+            departements={DEPARTEMENTS_AFFAIRES}
+            variant="affaires"
           />
-        )
+        ) : affairesDepartement === "Commentaire" ? (
+          <CommentaireFinal client={client} onFinish={handleCommentaireAffaires} />
+        ) : affairesDepartement === "Accueil" ? (
+          <QuestionnaireAccueilAffaires {...sharedPropsAffaires("Accueil")} />
+        ) : affairesDepartement === "Chambres" ? (
+          <QuestionnaireChambreAffaires {...sharedPropsAffaires("Chambres")} />
+        ) : affairesDepartement === "Commercial" ? (
+          <QuestionnaireCommercial {...sharedPropsAffaires("Commercial")} />
+        ) : affairesDepartement === "Restaurants" ? (
+          <QuestionnaireRestaurantsAffaires {...sharedPropsAffaires("Restaurants")} />
+        ) : affairesDepartement === "Loisirs et Divertissements" ? (
+          <QuestionnaireLoisirsDivertissementsAffaires {...sharedPropsAffaires("Loisirs et Divertissements")} />
+        ) : affairesDepartement === "Cadre Général" ? (
+          <QuestionnaireCadreGeneralAffaires {...sharedPropsAffaires("Cadre Général")} />
+        ) : null
       ) : (
-        /* ── Flux Tourisme de loisirs ── */
+        /* ── Flux Loisirs / Personnel ── */
         showWelcome ? (
           <WelcomePage onStart={handleStartEvaluation} />
         ) : (

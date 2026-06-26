@@ -33,11 +33,11 @@ export function withQuestionsFallback(apiData) {
     }
   }
 
-  // Tourisme Affaires : pass-through depuis l'API, pas de fallback local
-  const affaires = apiData?.["Tourisme Affaires"];
-  result["Tourisme Affaires"] = Array.isArray(affaires)
-    ? affaires.map(normalizeQuestion)
-    : [];
+  // Catégories Affaires : pass-through depuis l'API, pas de fallback local
+  for (const cat of ["Tourisme Affaires", "Commercial"]) {
+    const list = apiData?.[cat];
+    result[cat] = Array.isArray(list) ? list.map(normalizeQuestion) : [];
+  }
 
   return result;
 }
