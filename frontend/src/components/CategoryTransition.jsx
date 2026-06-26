@@ -30,7 +30,7 @@ export default function CategoryTransition({
           ) : (
             <div className="category-transition-celebrate">
               <div className="category-transition-icon-badge">
-                <CategoryIcon dept={fromDept} size={30} color={variant === "affaires" ? "#C9A84C" : "#071b36"} />
+                <CategoryIcon dept={fromDept} size={30} color="#071b36" />
               </div>
               <CheckCircle2 size={26} color="#15803d" className="category-transition-check-icon" />
             </div>
@@ -51,7 +51,7 @@ export default function CategoryTransition({
               <p className="category-transition-next-label">Prochaine étape</p>
               <div className="category-transition-next-box">
                 <div className="category-transition-next-icon">
-                  <CategoryIcon dept={toDept} size={26} color={variant === "affaires" ? "#C9A84C" : "#071b36"} />
+                  <CategoryIcon dept={toDept} size={26} color="#071b36" />
                 </div>
                 <div>
                   <strong>{toDept}</strong>

@@ -39,8 +39,14 @@ const makeInitialReponses = () =>
 const makeInitialReponsesAffaires = () =>
   Object.fromEntries(DEPARTEMENTS_AFFAIRES.map((d) => [d, { reponses: [], currentQuestion: 0, commentaire: "" }]));
 
+// Map dept → dept précédent, pour le bouton Retour (Loisirs)
 const PREVIOUS_DEPT = Object.fromEntries(
   DEPARTEMENTS.slice(1).map((d, i) => [d, DEPARTEMENTS[i]])
+);
+
+// Map dept → dept précédent, pour le bouton Retour (Affaires)
+const PREVIOUS_DEPT_AFFAIRES = Object.fromEntries(
+  DEPARTEMENTS_AFFAIRES.slice(1).map((d, i) => [d, DEPARTEMENTS_AFFAIRES[i]])
 );
 
 function App() {
@@ -83,7 +89,10 @@ function App() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Helpers loisirs ───────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════
+  // LOISIRS — handlers
+  // ══════════════════════════════════════════════════════════════
+
   const getCompletedDepts = () => {
     if (!departement || departement === "Commentaire" || departement === "Synthese") return [];
     const currentIndex = DEPARTEMENTS.indexOf(departement);
@@ -166,7 +175,6 @@ function App() {
     setClient(null); setDone(false); setDepartement(null); setShowWelcome(true);
     setSkippedSteps([]); setAllReponses(makeInitialReponses());
     setCommentaireGlobal(""); setShowSynthese(false);
-    // Affaires reset
     setAffairesDepartement(null);
     setAllReponsesAffaires(makeInitialReponsesAffaires());
     setSkippedStepsAffaires([]);
@@ -214,13 +222,35 @@ function App() {
     setSkippedSteps(prev => prev.filter(d => d !== dept));
   };
 
-  // ── Handlers flux Affaires ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════
+  // AFFAIRES — handlers (même logique que Loisirs, adaptée)
+  // ══════════════════════════════════════════════════════════════
+
   const handleClientIdentified = (clientData) => {
     setClient(clientData);
     if (clientData.type_sejour === "affaires") {
       setShowWelcome(false);
       setAffairesDepartement("Accueil");
     }
+  };
+
+  const getCompletedDeptsAffaires = () => {
+    if (!affairesDepartement || affairesDepartement === "Commentaire") return [];
+    const currentIndex = DEPARTEMENTS_AFFAIRES.indexOf(affairesDepartement);
+    return DEPARTEMENTS_AFFAIRES.slice(0, currentIndex).filter(
+      (d) => skippedStepsAffaires.includes(d) || (allReponsesAffaires[d]?.reponses?.length > 0)
+    );
+  };
+
+  const handleReponseAffaires = (dept, question, note) => {
+    setAllReponsesAffaires(prev => ({
+      ...prev,
+      [dept]: {
+        ...prev[dept],
+        reponses: [...prev[dept].reponses, { question, note }],
+        currentQuestion: prev[dept].currentQuestion + 1,
+      },
+    }));
   };
 
   const handleQuestionnaireAffairesFinish = (reponses, commentaire) => {
@@ -236,6 +266,17 @@ function App() {
     setSkippedStepsAffaires(prev => [...prev, affairesDepartement]);
     const next = getNextCategoryAffaires(affairesDepartement);
     setCategoryTransitionAffaires({ type: "skip", fromDept: affairesDepartement, toDept: next || "Commentaire" });
+  };
+
+  const handleBackFromQuestionnaireAffaires = (currentDepartement) => {
+    setSkippedStepsAffaires(prev => prev.filter(s => s !== currentDepartement));
+    const previous = PREVIOUS_DEPT_AFFAIRES[currentDepartement];
+    if (previous) setAffairesDepartement(previous);
+  };
+
+  const getPreviousWasSkippedAffaires = (dept) => {
+    const previous = PREVIOUS_DEPT_AFFAIRES[dept];
+    return previous ? skippedStepsAffaires.includes(previous) : false;
   };
 
   const goAfterCategoryTransitionAffaires = () => {
@@ -298,7 +339,8 @@ function App() {
     setSkippedStepsAffaires(prev => prev.filter(d => d !== dept));
   };
 
-  // ── Shared props helpers ──────────────────────────────────────────────────
+  // ── Shared props builders ─────────────────────────────────────────────────
+
   const sharedProps = (dept) => ({
     categoryQuestions: questions[dept] || [],
     onFinish: handleQuestionnaireFinish,
@@ -330,9 +372,17 @@ function App() {
     categoryQuestions: questionsForAffaires[dept] || [],
     onFinish: handleQuestionnaireAffairesFinish,
     onBack: handleSkipCategoryAffaires,
-    variant: "affaires",
+    showBack: getPreviousWasSkippedAffaires(dept),
+    onBackClick: () => handleBackFromQuestionnaireAffaires(dept),
+    savedReponses: allReponsesAffaires[dept]?.reponses,
+    startAtQuestion: allReponsesAffaires[dept]?.currentQuestion,
+    onReponse: (question, note) => handleReponseAffaires(dept, question, note),
+    skippedSteps: skippedStepsAffaires,
+    completedDepts: getCompletedDeptsAffaires(),
     categoriesMeta: AFFAIRES_CATEGORIES_META,
     totalSteps: DEPARTEMENTS_AFFAIRES.length,
+    departements: DEPARTEMENTS_AFFAIRES,
+    showAffairesBadge: true,
   });
 
   if (questionsLoading) {
@@ -379,7 +429,6 @@ function App() {
             onUpdateCommentaireGlobal={setCommentaireAffaires}
             onConfirm={handleSendAffairesData}
             departements={DEPARTEMENTS_AFFAIRES}
-            variant="affaires"
           />
         ) : categoryTransitionAffaires ? (
           <CategoryTransition
@@ -389,12 +438,11 @@ function App() {
             onContinue={goAfterCategoryTransitionAffaires}
             categoriesMeta={AFFAIRES_CATEGORIES_META}
             departements={DEPARTEMENTS_AFFAIRES}
-            variant="affaires"
           />
         ) : affairesDepartement === "Commentaire" ? (
           <CommentaireFinal client={client} onFinish={handleCommentaireAffaires} />
         ) : affairesDepartement === "Accueil" ? (
-          <QuestionnaireAccueilAffaires {...sharedPropsAffaires("Accueil")} />
+          <QuestionnaireAccueilAffaires {...sharedPropsAffaires("Accueil")} showBack={false} onBackClick={undefined} />
         ) : affairesDepartement === "Chambres" ? (
           <QuestionnaireChambreAffaires {...sharedPropsAffaires("Chambres")} />
         ) : affairesDepartement === "Commercial" ? (

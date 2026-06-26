@@ -21,9 +21,10 @@ export default function QuestionnaireScreen({
   onReponse,
   skippedSteps = [],
   completedDepts = [],
-  variant = "",
   categoriesMeta = CATEGORIES_META,
   totalSteps = DEPARTEMENTS.length,
+  departements = DEPARTEMENTS,
+  showAffairesBadge = false,
 }) {
   const [index, setIndex] = useState(startAtQuestion || 0);
   const [reponses, setReponses] = useState(savedReponses || []);
@@ -32,7 +33,6 @@ export default function QuestionnaireScreen({
   const meta = categoriesMeta[deptName];
   const hasQuestions = Array.isArray(questions) && questions.length > 0;
   const currentText = hasQuestions ? getQuestionText(questions[index]) : "";
-  const isAffaires = variant === "affaires";
 
   useEffect(() => {
     if (startAtQuestion === 0) {
@@ -60,7 +60,7 @@ export default function QuestionnaireScreen({
 
   if (!hasQuestions) {
     return (
-      <ScreenLayout mainClassName="page-content" variant={variant}>
+      <ScreenLayout mainClassName="page-content">
         <div className="page-content-inner page-content-inner--questionnaire">
           <p className="q-empty-message">Aucune question configurée pour cette catégorie.</p>
           <button type="button" className="btn-skip-category" onClick={onBack}>
@@ -74,20 +74,22 @@ export default function QuestionnaireScreen({
   const questionProgress = ((index + 1) / questions.length) * 100;
 
   return (
-    <ScreenLayout mainClassName="page-content" variant={variant}>
+    <ScreenLayout mainClassName="page-content">
       <div className="page-content-inner page-content-inner--questionnaire">
-        {isAffaires ? (
+        {showAffairesBadge && (
           <div className="affaires-badge">
             <Briefcase size={11} />
             Affaires / Professionnel
           </div>
-        ) : (
-          <CategoryJourney
-            currentDept={deptName}
-            skippedSteps={skippedSteps}
-            completedDepts={completedDepts}
-          />
         )}
+
+        <CategoryJourney
+          currentDept={deptName}
+          skippedSteps={skippedSteps}
+          completedDepts={completedDepts}
+          departements={departements}
+          categoriesMeta={categoriesMeta}
+        />
 
         {showIntro && meta && (
           <div className="category-intro-banner" role="status">
