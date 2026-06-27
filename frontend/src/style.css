@@ -1230,7 +1230,7 @@ html:has(.client-form-hero) {
 /* ── Welcome page — Grand Hôtel ──────────────────────────────────────────── */
 
 @keyframes welcomeFadeUp {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -1240,8 +1240,31 @@ html:has(.client-form-hero) {
 }
 
 @keyframes logoGlow {
-  0%, 100% { box-shadow: 0 0 0 5px #EDE8DC, 0 0 0 7.5px #c8a951, 0 0 0 11px rgba(200,169,81,0.12), 0 16px 48px rgba(7,27,54,0.28); }
-  50%       { box-shadow: 0 0 0 5px #EDE8DC, 0 0 0 7.5px #c8a951, 0 0 0 14px rgba(200,169,81,0.22), 0 16px 56px rgba(7,27,54,0.36); }
+  0%, 100% { box-shadow: 0 0 0 4px #EDE8DC, 0 0 0 6px #c8a951, 0 0 0 9px rgba(200,169,81,0.12), 0 10px 32px rgba(7,27,54,0.28); }
+  50%       { box-shadow: 0 0 0 4px #EDE8DC, 0 0 0 6px #c8a951, 0 0 0 11px rgba(200,169,81,0.22), 0 12px 40px rgba(7,27,54,0.36); }
+}
+
+@keyframes pulseGold {
+  0%, 100% {
+    box-shadow:
+      0 1px 0 0 rgba(200,169,81,0.5) inset,
+      0 -1px 0 0 rgba(200,169,81,0.2) inset,
+      0 8px 24px rgba(7,27,54,0.4);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 0 rgba(200,169,81,0.85) inset,
+      0 -1px 0 0 rgba(200,169,81,0.35) inset,
+      0 12px 32px rgba(7,27,54,0.5),
+      0 0 0 4px rgba(200,169,81,0.13);
+  }
+}
+
+/* Forcer la page welcome à tenir dans la hauteur écran */
+.screen-page:has(.welcome-page) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 .welcome-page {
@@ -1250,16 +1273,17 @@ html:has(.client-form-hero) {
   text-align: center;
   position: relative;
   overflow: hidden;
+  background: #EDE8DC;
 }
 
-/* Motif papier luxe — très discret */
+/* Motif damassé géométrique doré — très discret */
 .welcome-page::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle, rgba(7,27,54,0.038) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M24 3L45 24L24 45L3 24Z' fill='none' stroke='%23c8a951' stroke-width='0.7'/%3E%3Cpath d='M24 11L37 24L24 37L11 24Z' fill='none' stroke='%23c8a951' stroke-width='0.4'/%3E%3C/svg%3E");
+  background-size: 48px 48px;
+  opacity: 0.04;
   pointer-events: none;
   z-index: 0;
 }
@@ -1278,25 +1302,25 @@ html:has(.client-form-hero) {
   position: relative;
   z-index: 1;
   justify-content: center;
-  padding: 18px 24px 24px;
+  padding: 8px 20px 10px;
   max-width: 460px;
   gap: 0;
 }
 
-/* ── Logo ── */
+/* ── Logo — taille réduite ── */
 .welcome-logo-wrap {
-  width: clamp(148px, 28vw, 188px);
-  height: clamp(148px, 28vw, 188px);
+  width: clamp(88px, 12vw, 112px);
+  height: clamp(88px, 12vw, 112px);
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid #071b36;
+  border: 2.5px solid #071b36;
   box-shadow:
-    0 0 0 5px #EDE8DC,
-    0 0 0 7.5px #c8a951,
-    0 0 0 11px rgba(200, 169, 81, 0.12),
-    0 16px 48px rgba(7, 27, 54, 0.3);
+    0 0 0 4px #EDE8DC,
+    0 0 0 6px #c8a951,
+    0 0 0 9px rgba(200, 169, 81, 0.12),
+    0 10px 32px rgba(7, 27, 54, 0.3);
   flex-shrink: 0;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   animation:
     welcomeFadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both,
     logoGlow      4s ease-in-out 1s infinite;
@@ -1308,18 +1332,18 @@ html:has(.client-form-hero) {
   object-fit: cover;
 }
 
-/* ── Eyebrow ★ BIENVENUE ★ ── */
+/* ── Eyebrow — filet ✦ BIENVENUE ✦ ── */
 .welcome-eyebrow-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-  margin-bottom: 11px;
+  margin-bottom: 7px;
   animation: welcomeFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both 0.18s;
 }
 
 .welcome-eyebrow-line {
-  width: 48px;
+  width: 44px;
   height: 1px;
   background: linear-gradient(90deg, transparent, #c8a951);
   display: block;
@@ -1330,59 +1354,59 @@ html:has(.client-form-hero) {
   background: linear-gradient(90deg, #c8a951, transparent);
 }
 
-.welcome-eyebrow-star {
-  font-size: 0.52rem;
-  color: #c8a951;
-  line-height: 1;
-}
-
 .welcome-eyebrow-text {
-  font-size: 0.62rem;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 4px;
   color: #c8a951;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
 }
 
-/* ── Titre principal — très grand, dramatique ── */
+/* ── Titre principal ── */
 .welcome-headline {
   text-align: center;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
   animation: welcomeFadeUp 0.75s cubic-bezier(0.22,1,0.36,1) both 0.3s;
 }
 
 .welcome-headline h1 {
   color: #071b36;
   font-family: var(--font-prestige);
-  font-size: clamp(2.8rem, 10.5vw, 5rem);
+  font-size: clamp(1.6rem, 4.5vw, 2.1rem);
   font-weight: 400;
-  line-height: 0.97;
-  margin: 0 0 10px;
+  line-height: 1.1;
+  margin: 0 0 7px;
   letter-spacing: 0.01em;
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
 
-.welcome-lead {
-  font-size: 0.8rem;
-  color: #64748b;
-  line-height: 1.65;
-  margin: 0;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  max-width: 320px;
-  margin: 0 auto;
+.welcome-headline-divider {
+  width: 36px;
+  height: 2px;
+  background: #c8a951;
+  margin: 0 auto 8px;
+  border-radius: 2px;
 }
 
-/* ── Piliers encadrés deux règles ── */
+.welcome-lead {
+  font-size: 0.73rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 auto;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  max-width: 300px;
+}
+
+/* ── Section piliers — grille de 7 cards ── */
 .welcome-pillars-section {
   width: 100%;
-  max-width: 360px;
-  margin: 0 auto 20px;
+  margin: 0 auto 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   animation: welcomeFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both 0.44s;
 }
 
@@ -1393,41 +1417,82 @@ html:has(.client-form-hero) {
   flex-shrink: 0;
 }
 
-.welcome-pillars-text {
-  margin: 0;
-  font-size: 0.78rem;
-  color: #071b36;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  opacity: 0.75;
+.welcome-pillars-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
 }
 
-/* ── Bouton CTA — sweep doré en boucle ── */
+.welcome-pillar-card {
+  flex: 0 0 calc(25% - 4.5px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 5px 7px;
+  background: #FAF8F3;
+  border: 1px solid rgba(200, 169, 81, 0.3);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(7, 27, 54, 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.welcome-pillar-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(7, 27, 54, 0.13);
+  border-color: rgba(200, 169, 81, 0.6);
+}
+
+.welcome-pillar-name {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #071b36;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+}
+
+.welcome-pillar-desc {
+  font-size: 7.5px;
+  color: #64748b;
+  line-height: 1.3;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Bouton CTA — pill complet + pulse doré ── */
 .welcome-cta-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 15px 36px;
+  padding: 11px 32px;
   background: #071b36;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 0.97rem;
+  border-radius: 50px;
+  font-size: 0.93rem;
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
-  min-width: min(100%, 280px);
+  min-width: min(100%, 260px);
   position: relative;
   overflow: hidden;
   box-shadow:
     0 1px 0 0 rgba(200,169,81,0.5) inset,
     0 -1px 0 0 rgba(200,169,81,0.2) inset,
-    0 10px 32px rgba(7, 27, 54, 0.4);
+    0 8px 24px rgba(7, 27, 54, 0.4);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
-  animation: welcomeFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both 0.56s;
+  animation:
+    welcomeFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.56s both,
+    pulseGold 3s ease-in-out 2s infinite;
   letter-spacing: 0.01em;
 }
 
@@ -1436,8 +1501,8 @@ html:has(.client-form-hero) {
   content: '';
   position: absolute;
   top: 0;
-  left: 16px;
-  right: 16px;
+  left: 14px;
+  right: 14px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(200,169,81,0.6), transparent);
   pointer-events: none;
@@ -1461,11 +1526,11 @@ html:has(.client-form-hero) {
 }
 
 .welcome-cta-btn:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow:
     0 1px 0 0 rgba(200,169,81,0.5) inset,
     0 -1px 0 0 rgba(200,169,81,0.2) inset,
-    0 16px 42px rgba(7, 27, 54, 0.52);
+    0 14px 36px rgba(7, 27, 54, 0.52);
 }
 
 .welcome-cta-btn:active {
@@ -1475,8 +1540,12 @@ html:has(.client-form-hero) {
 
 /* ── Tagline ── */
 .welcome-tagline {
-  margin: 14px 0 0;
-  font-size: 0.63rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 0.6rem;
   color: #b0bcc8;
   font-style: italic;
   letter-spacing: 0.08em;
@@ -1484,15 +1553,31 @@ html:has(.client-form-hero) {
 }
 
 @media (max-width: 480px) {
-  .welcome-logo-wrap { width: 115px; height: 115px; }
-  .welcome-headline h1 { font-size: 2.3rem; }
-  .welcome-cta-btn { padding: 13px 26px; }
+  .welcome-logo-wrap { width: 80px; height: 80px; margin-bottom: 8px; }
+  .welcome-headline h1 { font-size: 1.5rem; }
+  .welcome-cta-btn { padding: 10px 24px; }
+  .welcome-pillar-card { flex: 0 0 calc(50% - 3px); }
+}
+
+/* Écrans très courts (moins de 650px de hauteur) */
+@media (max-height: 650px) {
+  .welcome-page-inner { padding: 4px 20px 6px; }
+  .welcome-logo-wrap { width: 72px; height: 72px; margin-bottom: 6px; }
+  .welcome-eyebrow-row { margin-bottom: 4px; }
+  .welcome-headline { margin-bottom: 6px; }
+  .welcome-headline h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .welcome-headline-divider { margin: 0 auto 5px; }
+  .welcome-lead { font-size: 0.68rem; }
+  .welcome-pillars-section { gap: 5px; margin-bottom: 8px; }
+  .welcome-pillar-card { padding: 6px 4px 5px; }
+  .welcome-cta-btn { padding: 9px 28px; }
+  .welcome-tagline { margin-top: 5px; }
 }
 
 .welcome-btn {
-  padding: 16px 36px;
-  font-size: clamp(1rem, 3vw, 1.15rem) !important;
-  min-width: min(100%, 280px);
+  padding: 11px 32px;
+  font-size: clamp(0.9rem, 3vw, 1.05rem) !important;
+  min-width: min(100%, 260px);
   box-shadow: 0 6px 20px rgba(7, 27, 54, 0.25);
 }
 
