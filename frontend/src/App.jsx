@@ -4,6 +4,7 @@ import ClientForm from "./components/ClientForm";
 import Dashboard from "./components/Dashboard";
 import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import WelcomePage from "./components/WelcomePage";
+import WelcomePageAffaires from "./components/WelcomePageAffaires";
 import QuestionnaireAccueil from "./components/QuestionnaireAccueil";
 import QuestionnaireChambres from "./components/QuestionnaireChambres";
 import QuestionnaireBandama from "./components/QuestionnaireBandama";
@@ -73,6 +74,7 @@ function App() {
   const [categoryTransitionAffaires, setCategoryTransitionAffaires] = useState(null);
   const [commentaireAffaires, setCommentaireAffaires] = useState("");
   const [showSyntheseAffaires, setShowSyntheseAffaires] = useState(false);
+  const [showWelcomeAffaires, setShowWelcomeAffaires] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +183,7 @@ function App() {
     setCategoryTransitionAffaires(null);
     setCommentaireAffaires("");
     setShowSyntheseAffaires(false);
+    setShowWelcomeAffaires(false);
   };
 
   const handleLogout = async () => {
@@ -229,9 +232,13 @@ function App() {
   const handleClientIdentified = (clientData) => {
     setClient(clientData);
     if (clientData.type_sejour === "affaires") {
-      setShowWelcome(false);
-      setAffairesDepartement("Accueil");
+      setShowWelcomeAffaires(true);
     }
+  };
+
+  const handleStartEvaluationAffaires = () => {
+    setShowWelcomeAffaires(false);
+    setAffairesDepartement("Accueil");
   };
 
   const getCompletedDeptsAffaires = () => {
@@ -417,7 +424,9 @@ function App() {
         <ThankYouPage client={client} onBack={handleBackToClient} />
       ) : isAffaires ? (
         /* ── Flux Affaires / Professionnel — 6 catégories ── */
-        showSyntheseAffaires ? (
+        showWelcomeAffaires ? (
+          <WelcomePageAffaires onStart={handleStartEvaluationAffaires} />
+        ) : showSyntheseAffaires ? (
           <SynthesePage
             allReponses={allReponsesAffaires}
             commentaireGlobal={commentaireAffaires}

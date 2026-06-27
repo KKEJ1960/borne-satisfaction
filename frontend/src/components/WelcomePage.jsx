@@ -8,7 +8,6 @@ import {
   Sparkles,
   Mountain,
   Star,
-  Heart,
 } from "lucide-react";
 import ScreenLayout from "./ScreenLayout";
 import "../style.css";
@@ -71,11 +70,6 @@ export default function WelcomePage({ onStart }) {
           <span>Évaluer mon séjour</span>
           <ChevronRight size={17} strokeWidth={2.5} />
         </button>
-
-        <p className="welcome-tagline">
-          <Heart size={12} fill="#c8a951" color="#c8a951" />
-          Votre satisfaction, notre priorité
-        </p>
 
       </div>
     </ScreenLayout>
