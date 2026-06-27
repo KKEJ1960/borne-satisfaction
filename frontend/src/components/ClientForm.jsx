@@ -18,11 +18,21 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
+  const TEL_REGEX = /^(?:0[1-9]\d{8}|\+\d{1,3}[\s\-()]?(?:\d[\s\-()]?){5,13}\d)$/;
+  const TEL_ERROR = "Numéro invalide. Format ivoirien (ex: 0758432190) ou international (ex: +33612345678)";
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleBlurTelephone = () => {
+    const telTrim = formData.telephone.trim();
+    if (telTrim && !TEL_REGEX.test(telTrim)) {
+      setFieldErrors((prev) => ({ ...prev, telephone: TEL_ERROR }));
     }
   };
 
@@ -52,6 +62,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
       if (!prenomTrim) errors.prenom = "Prénom requis.";
       if (!nomTrim)    errors.nom    = "Nom requis.";
       if (!telTrim)    errors.telephone = "Téléphone requis.";
+      else if (!TEL_REGEX.test(telTrim)) errors.telephone = TEL_ERROR;
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors);
         return;
@@ -75,6 +86,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
           if (!prenomTrim) errors.prenom = "Prénom requis.";
           if (!nomTrim)    errors.nom    = "Nom requis.";
           if (!telTrim)    errors.telephone = "Téléphone requis.";
+          else if (!TEL_REGEX.test(telTrim)) errors.telephone = TEL_ERROR;
           if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
         }
       }
@@ -158,6 +170,7 @@ export default function ClientForm({ onClientIdentified, onAdminTrigger, onSuper
                 name="telephone"
                 value={formData.telephone}
                 onChange={handleChange}
+                onBlur={handleBlurTelephone}
                 autoComplete="off"
                 required
                 className={fieldErrors.telephone ? "field-error-input" : ""}

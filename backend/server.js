@@ -75,7 +75,7 @@ const VALID_DEPARTEMENTS = [...CATEGORIES, "Global"];
 
 // ── P3.2 / P3.3 — Validation helpers ─────────────────────────────────────────
 const NOM_REGEX = /^[a-zA-ZÀ-ÿ\s\-']+$/;
-const TEL_REGEX = /^[\d\s+\-()]{1,20}$/;
+const TEL_REGEX = /^(?:0[1-9]\d{8}|\+\d{1,3}[\s\-()]?(?:\d[\s\-()]?){5,13}\d)$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALPHANUM_REGEX = /^[a-zA-Z0-9]{1,10}$/;
 
