@@ -2,8 +2,8 @@ import axios from "axios";
 
 const envApiUrl = import.meta.env.VITE_API_URL;
 
-// Si URL définie dans .env, l'utiliser directement
-// Fallback réseau: quand l'app est ouverte depuis un téléphone,
-// on cible automatiquement le backend sur la même machine (port 5001).
-export const API_URL = envApiUrl || `http://${window.location.hostname}:5001`;
+// Production  : variable d'env VITE_API_URL (Railway)
+// Dev desktop : proxy Vite /api → localhost:5001 (évite le problème pare-feu Windows)
+// Dev téléphone : idem, tout passe par le port 5173 déjà ouvert
+export const API_URL = envApiUrl || (import.meta.env.DEV ? '/api' : `http://${window.location.hostname}:5001`);
 
