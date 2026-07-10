@@ -754,6 +754,23 @@ html:has(.client-form-hero) {
   }
 }
 
+@media (max-width: 768px) {
+  .rating-face-img {
+    width: 60px;
+    height: 60px;
+  }
+  .q-rating-icon-wrap {
+    width: 60px;
+    height: 60px;
+  }
+  .q-rating-grid {
+    gap: 4px;
+  }
+  .q-category-zone {
+    padding: 8px 6px 10px;
+  }
+}
+
 .q-rating-card {
   background: none;
   border: none;
