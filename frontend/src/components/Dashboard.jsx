@@ -33,6 +33,7 @@ import {
 import { API_URL } from "../config/api";
 import { authHeaders, ADMIN_AXIOS } from "../config/auth";
 import AdminQuestionsPanel from "./AdminQuestionsPanel";
+import ClientsPanel from "./ClientsPanel";
 import { NOTE_LABELS, NOTE_COLORS, NOTE_EMOJIS } from "../constants/ratings";
 import { parseAvisCommentaire, formatNoteLine } from "../utils/parseAvisCommentaire";
 import "../style.css";
@@ -451,6 +452,14 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
             <HelpCircle size={16} />
             Questions
           </button>
+          <button
+            type="button"
+            className={`admin-tab${activeTab === "clients" ? " is-active" : ""}`}
+            onClick={() => setActiveTab("clients")}
+          >
+            <Users size={16} />
+            Clients
+          </button>
         </div>
         {activeTab === "stats" && (
           <>
@@ -516,7 +525,7 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
         <button
           type="button"
           className="admin-btn admin-btn-back"
-          onClick={activeTab === "questions" ? () => setActiveTab("stats") : onBack}
+          onClick={activeTab !== "stats" ? () => setActiveTab("stats") : onBack}
         >
           <ArrowLeft size={16} />
           Retour
@@ -537,6 +546,8 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
 
       {activeTab === "questions" ? (
         <AdminQuestionsPanel onQuestionsChanged={onQuestionsChanged} />
+      ) : activeTab === "clients" ? (
+        <ClientsPanel />
       ) : (
         <>
           {filterState.archived && (

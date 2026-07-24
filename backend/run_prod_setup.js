@@ -271,6 +271,31 @@ async function main() {
     skip("Table logs_activite déjà présente");
   }
 
+  // messages_clients
+  if (!(await tableExists(conn, dbName, "messages_clients"))) {
+    await conn.query(`
+      CREATE TABLE messages_clients (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        client_id    INT NOT NULL,
+        admin_id     INT NULL,
+        type         ENUM('email','sms') NOT NULL,
+        destinataire VARCHAR(255) NOT NULL,
+        sujet        VARCHAR(255) NULL,
+        contenu      TEXT NOT NULL,
+        statut       ENUM('envoye','echec') NOT NULL DEFAULT 'envoye',
+        erreur       TEXT NULL,
+        date_envoi   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+        FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE SET NULL
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    `);
+    await conn.query("CREATE INDEX idx_messages_clients_client_id  ON messages_clients(client_id)");
+    await conn.query("CREATE INDEX idx_messages_clients_date_envoi ON messages_clients(date_envoi)");
+    ok("Table messages_clients créée (+ indexes)");
+  } else {
+    skip("Table messages_clients déjà présente");
+  }
+
   // ── Étape 2 : Colonnes manquantes ───────────────────────────────────────────
   console.log("\n📋 Étape 2 — Colonnes manquantes");
 

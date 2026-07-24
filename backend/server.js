@@ -14,6 +14,7 @@ import pinoHttp from "pino-http";
 import db from "./db.js";
 import { requireAdmin } from "./middleware/auth.js";
 import superadminRoutes from "./routes/superadmin.js";
+import clientsRoutes from "./routes/clients.js";
 import { logActivity, clientIp } from "./utils/activityLog.js";
 import {
   fetchAvisRows,
@@ -250,6 +251,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/superadmin", superadminRoutes);
+app.use("/admin/clients", clientsRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });

@@ -186,10 +186,32 @@ async function main() {
     console.warn("⚠️  ADMIN_PASSWORD_HASH / ADMIN_PASSWORD manquant — admin non créé");
   }
 
+  if (!(await tableExists(conn, "messages_clients"))) {
+    await conn.query(`
+      CREATE TABLE messages_clients (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        client_id    INT NOT NULL,
+        admin_id     INT NULL,
+        type         ENUM('email','sms') NOT NULL,
+        destinataire VARCHAR(255) NOT NULL,
+        sujet        VARCHAR(255) NULL,
+        contenu      TEXT NOT NULL,
+        statut       ENUM('envoye','echec') NOT NULL DEFAULT 'envoye',
+        erreur       TEXT NULL,
+        date_envoi   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await conn.query("CREATE INDEX idx_messages_clients_client_id  ON messages_clients(client_id)");
+    await conn.query("CREATE INDEX idx_messages_clients_date_envoi ON messages_clients(date_envoi)");
+    console.log("✅ Table messages_clients créée (+ indexes)");
+  } else {
+    console.log("ℹ️  Table messages_clients déjà présente");
+  }
+
   // ── Migration charset utf8mb4 (fix UPDATE sur caractères non-latin1) ──────
   // Si la DB ou les tables sont en latin1 (défaut WampServer), les UPDATE
   // avec apostrophes typographiques / caractères non-latin1 renvoient 500.
-  const ALL_TABLES = ["clients", "avis", "questions", "admins", "logs_activite"];
+  const ALL_TABLES = ["clients", "avis", "questions", "admins", "logs_activite", "messages_clients"];
 
   // Charset utf8mb4 — nécessite le privilège ALTER (root ou GRANT ALTER)
   // Si refus, exécute le SQL manuellement dans phpMyAdmin.
