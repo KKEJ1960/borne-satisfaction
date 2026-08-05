@@ -1,0 +1,15 @@
+name: Keep backend awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl -sf --max-time 30 https://borne-satisfaction-backend.onrender.com/health \
+            || echo "Ping échoué (le backend était peut-être en train de démarrer)"
