@@ -28,6 +28,7 @@ import {
   generatePDF,
   csvFilename,
 } from "./utils/exportHelpers.js";
+import { requireHotelId } from "./utils/hotel.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -71,7 +72,7 @@ const logger = pino({
 });
 
 // ── Constantes métier ─────────────────────────────────────────────────────────
-const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires", "Commercial", "Restaurants"];
+const CATEGORIES = ["Accueil", "Chambres", "Le Bandama Petit Déjeuner", "Le Panoramique", "L'Alocodrome", "Loisirs et Divertissements", "Cadre Général", "Tourisme Affaires", "Commercial", "Restaurants", "Saveurs du Monde", "4 Épices", "Poulet Chaud", "Loisirs", "Cadre"];
 const VALID_DEPARTEMENTS = [...CATEGORIES, "Global"];
 
 // ── P3.2 / P3.3 — Validation helpers ─────────────────────────────────────────
@@ -230,11 +231,11 @@ app.use(
 );
 
 // ── Helpers internes ──────────────────────────────────────────────────────────
-async function fetchQuestionsGrouped({ activeOnly = true } = {}) {
+async function fetchQuestionsGrouped({ activeOnly = true, hotelId }) {
   const sql = activeOnly
-    ? "SELECT id, categorie, texte, ordre FROM questions WHERE actif = true ORDER BY categorie, ordre, id"
-    : "SELECT id, categorie, texte, ordre, actif FROM questions ORDER BY categorie, ordre, id";
-  const [rows] = await db.query(sql);
+    ? "SELECT id, categorie, texte, ordre FROM questions WHERE actif = true AND hotel_id = ? ORDER BY categorie, ordre, id"
+    : "SELECT id, categorie, texte, ordre, actif FROM questions WHERE hotel_id = ? ORDER BY categorie, ordre, id";
+  const [rows] = await db.query(sql, [hotelId]);
   const grouped = Object.fromEntries(CATEGORIES.map((c) => [c, []]));
   for (const row of rows) {
     if (!grouped[row.categorie]) continue;
@@ -243,6 +244,11 @@ async function fetchQuestionsGrouped({ activeOnly = true } = {}) {
     grouped[row.categorie].push(item);
   }
   return grouped;
+}
+
+async function getHotelNom(hotelId) {
+  const [[row]] = await db.query("SELECT nom FROM hotels WHERE id = ?", [hotelId]);
+  return row?.nom || "";
 }
 
 // ── Routes publiques ──────────────────────────────────────────────────────────
@@ -257,18 +263,34 @@ app.get("/health", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
+// ── Multi-hôtel — liste des établissements actifs ────────────────────────────
+app.get("/hotels", async (_req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT id, nom, slug FROM hotels WHERE actif = 1 ORDER BY id"
+    );
+    res.json(rows);
+  } catch (error) {
+    logger.error({ err: error.message }, "Erreur GET /hotels");
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // P3.2 — POST /client avec rate limit + validation stricte
 app.post("/client", clientLimiter, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const data = validateClient(req.body);
     if (!data) {
       return res.status(400).json({ error: "Données d'identification invalides." });
     }
     const [result] = await db.query(
-      "INSERT INTO clients (nom, prenom, telephone, email, numero_chambre, type_sejour) VALUES (?, ?, ?, ?, ?, ?)",
-      [data.nom, data.prenom, data.telephone, data.email, data.numero_chambre, data.type_sejour]
+      "INSERT INTO clients (nom, prenom, telephone, email, numero_chambre, type_sejour, hotel_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [data.nom, data.prenom, data.telephone, data.email, data.numero_chambre, data.type_sejour, hotelId]
     );
-    res.status(201).json({ id: result.insertId, type_sejour: data.type_sejour, message: "Client enregistré" });
+    res.status(201).json({ id: result.insertId, type_sejour: data.type_sejour, hotel_id: hotelId, message: "Client enregistré" });
   } catch (error) {
     logger.error({ err: error.message }, "Erreur création client");
     res.status(500).json({ error: "Erreur serveur lors de la création du client" });
@@ -278,11 +300,14 @@ app.post("/client", clientLimiter, async (req, res) => {
 // P3.3 — POST /avis avec rate limit + validation stricte
 app.post("/avis", avisLimiter, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const data = validateAvis(req.body);
     if (!data) {
       return res.status(400).json({ error: "Données invalides." });
     }
-    const [clientRows] = await db.query("SELECT id FROM clients WHERE id = ?", [data.client_id]);
+    const [clientRows] = await db.query("SELECT id FROM clients WHERE id = ? AND hotel_id = ?", [data.client_id, hotelId]);
     if (clientRows.length === 0) {
       return res.status(400).json({ error: "Client invalide" });
     }
@@ -322,7 +347,8 @@ app.post("/avis", avisLimiter, async (req, res) => {
         // C2 — Nombre de réponses limité au nb de questions actives (Tourisme Affaires)
         if (data.departement === "Tourisme Affaires") {
           const [qRows] = await db.query(
-            "SELECT COUNT(*) AS cnt FROM questions WHERE categorie = 'Tourisme Affaires' AND actif = true"
+            "SELECT COUNT(*) AS cnt FROM questions WHERE categorie = 'Tourisme Affaires' AND actif = true AND hotel_id = ?",
+            [hotelId]
           );
           const maxQ = qRows[0].cnt;
           if (parsed.reponses.length > maxQ) {
@@ -345,8 +371,8 @@ app.post("/avis", avisLimiter, async (req, res) => {
     // ─────────────────────────────────────────────────────────────────────────
 
     const [result] = await db.query(
-      "INSERT INTO avis (client_id, departement, note, commentaire) VALUES (?, ?, ?, ?)",
-      [data.client_id, data.departement, noteFinale, data.commentaire]
+      "INSERT INTO avis (client_id, departement, note, commentaire, hotel_id) VALUES (?, ?, ?, ?, ?)",
+      [data.client_id, data.departement, noteFinale, data.commentaire, hotelId]
     );
     res.status(201).json({ id: result.insertId, message: "Avis enregistré" });
   } catch (error) {
@@ -440,9 +466,12 @@ app.post("/admin/logout", requireAdmin, async (req, res) => {
 });
 
 // ── Routes questions ──────────────────────────────────────────────────────────
-app.get("/questions", async (_req, res) => {
+app.get("/questions", async (req, res) => {
   try {
-    const grouped = await fetchQuestionsGrouped({ activeOnly: true });
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const grouped = await fetchQuestionsGrouped({ activeOnly: true, hotelId });
     res.json(grouped);
   } catch (error) {
     logger.error({ err: error.message }, "Erreur GET /questions");
@@ -450,9 +479,12 @@ app.get("/questions", async (_req, res) => {
   }
 });
 
-app.get("/admin/questions", requireAdmin, async (_req, res) => {
+app.get("/admin/questions", requireAdmin, async (req, res) => {
   try {
-    const grouped = await fetchQuestionsGrouped({ activeOnly: false });
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const grouped = await fetchQuestionsGrouped({ activeOnly: false, hotelId });
     res.json(grouped);
   } catch (error) {
     logger.error({ err: error.message }, "Erreur GET /admin/questions");
@@ -462,20 +494,24 @@ app.get("/admin/questions", requireAdmin, async (_req, res) => {
 
 app.post("/admin/questions", requireAdmin, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { categorie, texte, ordre } = req.body;
     if (!categorie || !texte?.trim() || !CATEGORIES.includes(categorie)) {
       return res.status(400).json({ error: "categorie et texte requis" });
     }
     const order = ordre ?? 0;
     const [result] = await db.query(
-      "INSERT INTO questions (categorie, texte, ordre, actif) VALUES (?, ?, ?, true)",
-      [categorie, texte.trim(), order]
+      "INSERT INTO questions (categorie, texte, ordre, actif, hotel_id) VALUES (?, ?, ?, true, ?)",
+      [categorie, texte.trim(), order, hotelId]
     );
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "QUESTION_CREATED",
       details: JSON.stringify({ id: result.insertId, categorie, texte: texte.trim() }),
       ip: clientIp(req),
+      hotelId,
     });
     res.status(201).json({
       id: result.insertId,
@@ -483,6 +519,7 @@ app.post("/admin/questions", requireAdmin, async (req, res) => {
       texte: texte.trim(),
       ordre: order,
       actif: true,
+      hotel_id: hotelId,
     });
   } catch (error) {
     logger.error({ err: error.message, stack: error.stack }, "Erreur POST /admin/questions");
@@ -492,6 +529,9 @@ app.post("/admin/questions", requireAdmin, async (req, res) => {
 
 app.put("/admin/questions/:id", requireAdmin, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { id } = req.params;
     const { texte, ordre, actif } = req.body;
     const updates = [];
@@ -514,20 +554,26 @@ app.put("/admin/questions/:id", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Aucune modification fournie" });
     }
 
-    params.push(id);
-    await db.query(`UPDATE questions SET ${updates.join(", ")} WHERE id = ?`, params);
+    params.push(id, hotelId);
+    const [updateResult] = await db.query(
+      `UPDATE questions SET ${updates.join(", ")} WHERE id = ? AND hotel_id = ?`,
+      params
+    );
+    if (updateResult.affectedRows === 0) {
+      return res.status(404).json({ error: "Question introuvable" });
+    }
 
     const [rows] = await db.query(
-      "SELECT id, categorie, texte, ordre, actif FROM questions WHERE id = ?",
-      [id]
+      "SELECT id, categorie, texte, ordre, actif FROM questions WHERE id = ? AND hotel_id = ?",
+      [id, hotelId]
     );
-    if (!rows.length) return res.status(404).json({ error: "Question introuvable" });
     const q = rows[0];
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "QUESTION_UPDATED",
       details: JSON.stringify({ id: q.id, categorie: q.categorie }),
       ip: clientIp(req),
+      hotelId,
     });
     res.json({ id: q.id, categorie: q.categorie, texte: q.texte, ordre: q.ordre, actif: !!q.actif });
   } catch (error) {
@@ -538,8 +584,11 @@ app.put("/admin/questions/:id", requireAdmin, async (req, res) => {
 
 app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { id } = req.params;
-    const [result] = await db.query("DELETE FROM questions WHERE id = ?", [id]);
+    const [result] = await db.query("DELETE FROM questions WHERE id = ? AND hotel_id = ?", [id, hotelId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Question introuvable" });
     }
@@ -548,6 +597,7 @@ app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
       action: "QUESTION_DELETED",
       details: JSON.stringify({ id: Number(id) }),
       ip: clientIp(req),
+      hotelId,
     });
     res.json({ success: true, id: Number(id) });
   } catch (error) {
@@ -559,7 +609,10 @@ app.delete("/admin/questions/:id", requireAdmin, async (req, res) => {
 // ── Routes avis ───────────────────────────────────────────────────────────────
 async function handleGetAvis(req, res) {
   try {
-    const rows = await fetchAvisRows(db, req.query);
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const rows = await fetchAvisRows(db, { ...req.query, hotel_id: hotelId });
     res.json(rows);
   } catch (error) {
     logger.error({ err: error.message }, "Erreur GET avis");
@@ -578,12 +631,15 @@ app.get("/admin/avis", requireAdmin, handleGetAvis);
 
 app.get("/admin/avis/archive/preview", requireAdmin, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { avant_date: avantDate } = req.query;
     if (!avantDate || !/^\d{4}-\d{2}-\d{2}$/.test(avantDate)) {
       return res.status(400).json({ error: "avant_date requis (YYYY-MM-DD)" });
     }
-    const count = await countAvisToArchive(db, avantDate);
-    res.json({ count, avant_date: avantDate });
+    const count = await countAvisToArchive(db, avantDate, hotelId);
+    res.json({ count, avant_date: avantDate, hotel_id: hotelId });
   } catch (error) {
     logger.error({ err: error.message }, "Erreur preview archive");
     res.status(500).json({ error: "Erreur serveur" });
@@ -592,14 +648,18 @@ app.get("/admin/avis/archive/preview", requireAdmin, async (req, res) => {
 
 app.post("/admin/avis/archive", requireAdmin, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { avant_date: avantDate } = req.body;
     if (!avantDate || !/^\d{4}-\d{2}-\d{2}$/.test(avantDate)) {
       return res.status(400).json({ error: "avant_date requis (YYYY-MM-DD)" });
     }
-    const archived = await archiveAvisBefore(db, avantDate);
+    const archived = await archiveAvisBefore(db, avantDate, hotelId);
     await logActivity(db, {
       adminId: req.admin?.adminId,
       action: "AVIS_ARCHIVED",
+      hotelId,
       details: JSON.stringify({ avant_date: avantDate, count: archived }),
       ip: clientIp(req),
     });
@@ -613,8 +673,12 @@ app.post("/admin/avis/archive", requireAdmin, async (req, res) => {
 // ── Routes export ─────────────────────────────────────────────────────────────
 app.get("/admin/export/csv", requireAdmin, async (req, res) => {
   try {
-    const rows = await fetchAvisRows(db, req.query);
-    const csv = generateCSV(rows);
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const rows = await fetchAvisRows(db, { ...req.query, hotel_id: hotelId });
+    const hotelNom = await getHotelNom(hotelId);
+    const csv = generateCSV(rows, { hotelNom });
     const filename = csvFilename();
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -623,6 +687,7 @@ app.get("/admin/export/csv", requireAdmin, async (req, res) => {
       action: "EXPORT_CSV",
       details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
+      hotelId,
     });
     res.send(csv);
   } catch (error) {
@@ -633,9 +698,13 @@ app.get("/admin/export/csv", requireAdmin, async (req, res) => {
 
 app.get("/admin/export/excel", requireAdmin, async (req, res) => {
   try {
-    const rows = await fetchAvisRows(db, req.query);
-    const { meta } = buildAvisFilters(req.query);
-    const { buffer, filename } = await generateExcel(rows, meta);
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const rows = await fetchAvisRows(db, { ...req.query, hotel_id: hotelId });
+    const { meta } = buildAvisFilters({ ...req.query, hotel_id: hotelId });
+    const hotelNom = await getHotelNom(hotelId);
+    const { buffer, filename } = await generateExcel(rows, { ...meta, hotelNom });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     await logActivity(db, {
@@ -643,6 +712,7 @@ app.get("/admin/export/excel", requireAdmin, async (req, res) => {
       action: "EXPORT_EXCEL",
       details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
+      hotelId,
     });
     res.send(Buffer.from(buffer));
   } catch (error) {
@@ -653,9 +723,13 @@ app.get("/admin/export/excel", requireAdmin, async (req, res) => {
 
 app.get("/admin/export/pdf", requireAdmin, async (req, res) => {
   try {
-    const rows = await fetchAvisRows(db, req.query);
-    const { meta } = buildAvisFilters(req.query);
-    const { buffer, filename } = await generatePDF(rows, meta);
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
+    const rows = await fetchAvisRows(db, { ...req.query, hotel_id: hotelId });
+    const { meta } = buildAvisFilters({ ...req.query, hotel_id: hotelId });
+    const hotelNom = await getHotelNom(hotelId);
+    const { buffer, filename } = await generatePDF(rows, { ...meta, hotelNom });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     await logActivity(db, {
@@ -663,6 +737,7 @@ app.get("/admin/export/pdf", requireAdmin, async (req, res) => {
       action: "EXPORT_PDF",
       details: JSON.stringify({ nb_lignes: rows.length, filtres: req.query }),
       ip: clientIp(req),
+      hotelId,
     });
     res.send(buffer);
   } catch (error) {

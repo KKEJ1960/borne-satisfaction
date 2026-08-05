@@ -100,7 +100,19 @@ html:has(.client-form-hero) {
   background-color: #071b36;
 }
 
+/* HP Resort — même mécanique, couleur de secours propre à sa charte */
+body:has(.hpr-form-hero),
+html:has(.hpr-form-hero) {
+  background-color: #3D1F0E;
+}
+
+#root:has(.hpr-form-hero) {
+  min-height: 100dvh;
+  background-color: #3D1F0E;
+}
+
 .app-shell > .client-form-hero,
+.app-shell > .hpr-form-hero,
 .app-shell > .screen-page,
 .app-shell > .admin-page {
   flex: 1;
@@ -1755,6 +1767,13 @@ html:has(.client-form-hero) {
   }
 }
 
+.client-form-brand .client-form-logo-wrap {
+  width: clamp(60px, 8vw, 76px);
+  height: clamp(60px, 8vw, 76px);
+  margin-bottom: 0;
+  animation: none;
+}
+
 .client-form-brand {
   display: flex;
   flex-direction: column;
@@ -1990,6 +2009,184 @@ html:has(.client-form-hero) {
   font-weight: 500;
   opacity: 0.9;
   letter-spacing: 0.02em;
+}
+
+/* ── Sélecteur d'hôtel (multi-établissement) ─────────────────────────────── */
+.hotel-selector-page {
+  background:
+    radial-gradient(circle at 20% 15%, rgba(201, 168, 74, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 80% 85%, rgba(196, 98, 45, 0.08) 0%, transparent 45%),
+    #071b36;
+  position: relative;
+  overflow: hidden;
+}
+
+.hotel-selector-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath d='M32 4L60 32L32 60L4 32Z' fill='none' stroke='%23ffffff' stroke-width='0.5' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 64px 64px;
+  pointer-events: none;
+}
+
+.hotel-selector-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hotel-selector-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.hotel-selector-loading,
+.hotel-selector-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+}
+
+.hotel-selector-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  justify-content: center;
+  max-width: 680px;
+}
+
+.hotel-selector-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 240px;
+  padding: 36px 22px 26px;
+  background: #fff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: hotelCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+@keyframes hotelCardIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hotel-selector-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--hotel-accent, #071b36);
+}
+
+.hotel-selector-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.32), 0 0 0 3px var(--hotel-accent, #071b36);
+}
+
+.hotel-selector-card-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 2.5px solid var(--hotel-accent, #071b36);
+  box-shadow: 0 0 0 4px #fff, 0 0 0 5px var(--hotel-accent-soft, #94a3b8);
+  color: #fff;
+  background: var(--hotel-accent, #071b36);
+}
+
+.hotel-selector-card-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hotel-selector-card-name {
+  font-family: var(--font-prestige);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.hotel-selector-card-tagline {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hotel-accent, #64748b);
+  margin-bottom: 6px;
+}
+
+.hotel-selector-card-cta {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--hotel-accent, #071b36);
+  opacity: 0.55;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.hotel-selector-card:hover .hotel-selector-card-cta {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* ── Bandeau hôtel actif + bouton "Changer d'hôtel" dans le header admin ── */
+.admin-header-hotel-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-change-hotel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: #fff;
+  border: none;
+  color: #071b36;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-change-hotel-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
 }
 
 .admin-toolbar {
@@ -6053,5 +6250,663 @@ textarea:focus {
 @media (max-width: 768px) {
   .cp-table { font-size: 0.78rem; }
   .cp-td-email, .cp-td-sujet { max-width: 140px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HP RESORT — ClientFormHPResort (charte graphique dédiée, namespace hpr-*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.hpr-form-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top, 1rem)) 1rem max(1rem, env(safe-area-inset-bottom, 1rem));
+  box-sizing: border-box;
+  overflow-y: auto;
+  background-color: #3D1F0E;
+}
+
+.hpr-form-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  background-color: #3D1F0E;
+  background-image: url("/fond-hpresort.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hpr-form-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(61, 31, 14, 0.25) 0%,
+    rgba(61, 31, 14, 0.15) 40%,
+    rgba(61, 31, 14, 0.7) 100%
+  );
+  pointer-events: none;
+}
+
+.hpr-form-hero-caption {
+  display: none;
+}
+
+.hpr-form-hero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.hpr-form-shell {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+  background: rgba(253, 246, 239, 0.94);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(61, 31, 14, 0.28);
+}
+
+/* ── Header : cercle + titre + sous-titre ─────────────────────────────────── */
+.hpr-form-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(61, 31, 14, 0.12);
+}
+
+.hpr-form-icon-circle {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid #C4622D;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hpr-form-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hpr-form-title {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 26px;
+  color: #3D1F0E;
+  line-height: 1.15;
+}
+
+.hpr-form-subtitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #C4622D;
+}
+
+/* ── Champs ────────────────────────────────────────────────────────────────── */
+.hpr-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hpr-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hpr-form-fields label {
+  display: block;
+  margin-bottom: 5px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: #5a3a28;
+}
+
+.hpr-form-fields input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid #e0c8bc;
+  background: #fdf8f5;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  color: #3D1F0E;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hpr-form-fields input::placeholder {
+  color: #b89684;
+}
+
+.hpr-form-fields input:focus {
+  border-color: #C4622D;
+  box-shadow: 0 0 0 3px rgba(196, 98, 45, 0.15);
+}
+
+/* ── Type de séjour ────────────────────────────────────────────────────────── */
+.hpr-form-type-label {
+  margin: 0 0 8px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: #5a3a28;
+}
+
+.hpr-form-type-picker {
+  display: flex;
+  gap: 10px;
+}
+
+.hpr-type-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid #e0c8bc;
+  background: #fdf8f5;
+  color: #5a3a28;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hpr-type-opt.is-active {
+  background: #3D1F0E;
+  border-color: #3D1F0E;
+  color: #FDF6EF;
+}
+
+/* ── Bouton CTA ────────────────────────────────────────────────────────────── */
+.hpr-form-submit {
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #C4622D;
+  color: #FDF6EF;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.12s ease;
+}
+
+.hpr-form-submit:hover:not(:disabled) {
+  background: #a8501f;
+}
+
+.hpr-form-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.hpr-form-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 767px) {
+  .hpr-form-shell {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .hpr-form-title {
+    font-size: 24px;
+  }
+}
+
+/* ── Desktop (≥768px) : split deux colonnes ──────────────────────────────────── */
+@media (min-width: 768px) {
+  .hpr-form-hero {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .hpr-form-hero-media {
+    order: 1;
+    position: relative;
+    inset: auto;
+    width: 50%;
+    flex: 0 0 50%;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .hpr-form-hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(61, 31, 14, 0) 0%,
+      rgba(61, 31, 14, 0) 50%,
+      rgba(61, 31, 14, 0.8) 100%
+    );
+  }
+
+  .hpr-form-hero-caption {
+    display: block;
+    position: relative;
+    z-index: 1;
+    margin: 0 0 32px 36px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: #FDF6EF;
+  }
+
+  .hpr-form-hero-inner {
+    order: 2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    flex: 0 0 50%;
+    min-height: 100dvh;
+    padding: 48px 56px;
+    background: #ffffff;
+    z-index: 1;
+  }
+
+  .hpr-form-shell {
+    background: #ffffff;
+    box-shadow: none;
+    border-radius: 0;
+    border: none;
+    max-width: 420px;
+    width: 100%;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HP RESORT — thème appliqué au parcours client PARTAGÉ (scope .theme-hpresort
+   posé par ScreenLayout via variant="hpresort"). Ne touche JAMAIS les styles
+   Président : cette classe n'est jamais présente sur son parcours à lui.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.theme-hpresort {
+  --font-prestige: 'Cormorant Garamond', Georgia, serif;
+}
+
+.theme-hpresort .global-header,
+.theme-hpresort .global-header::before {
+  background: #3D1F0E;
+}
+
+/* ── Bandeau d'intro catégorie ─────────────────────────────────────────────── */
+.theme-hpresort .category-intro-banner {
+  background: linear-gradient(135deg, #3D1F0E 0%, #5a3a28 100%);
+  box-shadow: 0 6px 20px rgba(61, 31, 14, 0.25);
+}
+.theme-hpresort .category-intro-banner strong {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ── Parcours des catégories (step tracker) ──────────────────────────────────── */
+.theme-hpresort .category-journey-step--current {
+  border-color: #C4622D;
+  box-shadow: 0 4px 12px rgba(196, 98, 45, 0.2);
+}
+.theme-hpresort .category-journey-step--current .category-journey-name {
+  color: #C4622D;
+}
+.theme-hpresort .category-journey-step--current .category-journey-icon-wrap svg {
+  stroke: #C4622D;
+}
+.theme-hpresort .category-journey-here {
+  background: #C4622D;
+}
+
+/* ── Pastille catégorie / icône / progression question ───────────────────────── */
+.theme-hpresort .q-category-pill {
+  color: #3D1F0E;
+  background: rgba(196, 98, 45, 0.1);
+}
+.theme-hpresort .q-dept-icon {
+  background: linear-gradient(135deg, #3D1F0E 0%, #C4622D 100%);
+  box-shadow: 0 4px 12px rgba(61, 31, 14, 0.25);
+}
+.theme-hpresort .q-question-progress-label {
+  color: #3D1F0E;
+}
+.theme-hpresort .q-question-progress-fill {
+  background: linear-gradient(90deg, #3D1F0E, #C4622D);
+}
+
+/* ── Transition entre catégories ─────────────────────────────────────────────── */
+.theme-hpresort .category-transition-icon-badge {
+  background: linear-gradient(135deg, #fdf0e8 0%, #fbe3d3 100%);
+  border-color: #C4622D;
+}
+.theme-hpresort .category-transition-icon-badge svg { stroke: #C4622D; }
+.theme-hpresort .category-transition-done-title { color: #3D1F0E; }
+.theme-hpresort .category-transition-arrow { color: #C4622D; }
+.theme-hpresort .category-transition-next-box {
+  background: linear-gradient(135deg, #fdf0e8 0%, #fbe3d3 100%);
+  border-color: rgba(196, 98, 45, 0.3);
+}
+.theme-hpresort .category-transition-next-icon svg { stroke: #C4622D; }
+.theme-hpresort .category-transition-next-box strong { color: #3D1F0E; }
+.theme-hpresort .category-transition-next-hint { color: #3D1F0E; }
+
+/* ── Boutons partagés (Continuer / Passer / Envoyer / Découvrir) ─────────────── */
+.theme-hpresort .btn-primary-compact {
+  background: #C4622D;
+}
+.theme-hpresort .btn-primary-compact:hover:not(:disabled) {
+  background: #a8501f;
+}
+.theme-hpresort .btn-secondary-compact {
+  color: #3D1F0E;
+  border-color: #e0c8bc;
+}
+.theme-hpresort .btn-skip-category {
+  color: #3D1F0E;
+  border-color: #C4622D;
+}
+
+/* ── Commentaire final ────────────────────────────────────────────────────────── */
+.theme-hpresort .comment-page h2 { color: #3D1F0E; }
+.theme-hpresort .comment-page .comment-icon-wrap { background: #C4622D; }
+.theme-hpresort .comment-page textarea:focus { border-color: #C4622D; outline-color: #C4622D; }
+
+/* ── Synthèse ─────────────────────────────────────────────────────────────────── */
+.theme-hpresort .synthese-title { color: #3D1F0E; }
+.theme-hpresort .synthese-header-icon svg { stroke: #C4622D; }
+.theme-hpresort .synthese-card-title { color: #3D1F0E; }
+
+/* ── Écran de bienvenue ───────────────────────────────────────────────────────── */
+.theme-hpresort .welcome-logo-wrap {
+  border-color: #C4622D;
+  box-shadow:
+    0 0 0 4px #FDF6EF,
+    0 0 0 6px #C4622D,
+    0 0 0 9px rgba(196, 98, 45, 0.12),
+    0 10px 32px rgba(61, 31, 14, 0.3);
+}
+.theme-hpresort .welcome-eyebrow-line { background: linear-gradient(90deg, transparent, #C4622D); }
+.theme-hpresort .welcome-eyebrow-line--rev { background: linear-gradient(90deg, #C4622D, transparent); }
+.theme-hpresort .welcome-eyebrow-text { color: #C4622D; }
+.theme-hpresort .welcome-headline h1 { color: #3D1F0E; }
+.theme-hpresort .welcome-headline-divider { background: #C4622D; }
+.theme-hpresort .welcome-rule { background: linear-gradient(90deg, transparent, rgba(196,98,45,0.5) 50%, transparent); }
+.theme-hpresort .welcome-pillar-card { border-color: rgba(196, 98, 45, 0.3); }
+.theme-hpresort .welcome-pillar-card:hover { border-color: rgba(196, 98, 45, 0.6); }
+.theme-hpresort .welcome-pillar-name { color: #3D1F0E; }
+.theme-hpresort .welcome-cta-btn {
+  background: #C4622D;
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.25) inset,
+    0 -1px 0 0 rgba(0,0,0,0.1) inset,
+    0 8px 24px rgba(61, 31, 14, 0.4);
+}
+.theme-hpresort .welcome-cta-btn:hover {
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.25) inset,
+    0 -1px 0 0 rgba(0,0,0,0.1) inset,
+    0 14px 36px rgba(61, 31, 14, 0.52);
+}
+.theme-hpresort .welcome-cta-btn::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); }
+.theme-hpresort .welcome-cta-btn::before { background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.18) 50%, transparent 80%); }
+
+/* ── Merci ──────────────────────────────────────────────────────────────────────── */
+.theme-hpresort .thank-you-icon { border-color: #C4622D; }
+.theme-hpresort .thank-you-icon svg { stroke: #C4622D; }
+.theme-hpresort .thank-you-title { color: #3D1F0E; }
+
+/* ── Bouton "Installer l'application" (PWA) ──────────────────────────────────── */
+.install-app-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 14px;
+  background: transparent;
+  border: 1px dashed rgba(7, 27, 54, 0.3);
+  border-radius: 10px;
+  color: #071b36;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.install-app-btn:hover {
+  background: rgba(7, 27, 54, 0.05);
+  border-color: rgba(7, 27, 54, 0.5);
+}
+
+.hpr-form-shell .install-app-btn {
+  color: #3D1F0E;
+  border-color: rgba(196, 98, 45, 0.4);
+}
+
+.hpr-form-shell .install-app-btn:hover {
+  background: rgba(196, 98, 45, 0.08);
+  border-color: #C4622D;
+}
+
+/* ── Dashboard admin HP Resort — charte propre (scope .theme-hpresort posé
+   directement sur .admin-page quand l'hôtel sélectionné est HP Resort) ────── */
+.theme-hpresort .admin-toolbar::before {
+  background: linear-gradient(90deg, #3D1F0E 0%, #6a3d1f 55%, #C4622D 100%);
+}
+
+.theme-hpresort .admin-tab.is-active {
+  background: linear-gradient(135deg, #3D1F0E 0%, #6a3d1f 100%);
+  box-shadow: 0 2px 10px rgba(61, 31, 14, 0.3);
+}
+
+.theme-hpresort .admin-btn-primary {
+  background: linear-gradient(135deg, #3D1F0E 0%, #C4622D 100%);
+  box-shadow: 0 2px 8px rgba(61, 31, 14, 0.25);
+}
+
+.theme-hpresort .admin-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4a2814 0%, #d4732e 100%);
+  box-shadow: 0 4px 14px rgba(61, 31, 14, 0.35);
+}
+
+.theme-hpresort .admin-btn-outline:hover {
+  border-color: #C4622D;
+  box-shadow: 0 2px 8px rgba(196, 98, 45, 0.15);
+}
+
+.theme-hpresort .admin-stat-card {
+  border-top-color: #C4622D;
+}
+
+.theme-hpresort .admin-stat-value {
+  color: #3D1F0E;
+}
+
+.theme-hpresort .admin-stat-card svg {
+  stroke: #C4622D;
+}
+
+.theme-hpresort .admin-last-update {
+  color: #7a5a45;
+  background: #fdf0e8;
+  border-color: rgba(196, 98, 45, 0.25);
+}
+
+/* ── Espace Administration (/admin) — point d'entrée dédié du personnel ────── */
+.admin-login-page {
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(201, 168, 74, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 80% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
+    #071b36;
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.admin-login-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #071b36 0%, #1e3a5f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(7, 27, 54, 0.3);
+}
+
+.admin-login-title {
+  margin: 0 0 4px;
+  font-family: var(--font-prestige);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #071b36;
+}
+
+.admin-login-subtitle {
+  margin: 0 0 24px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.admin-login-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-login-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-login-form input:focus {
+  border-color: #071b36;
+  box-shadow: 0 0 0 3px rgba(7, 27, 54, 0.12);
+}
+
+.admin-login-password-wrap {
+  position: relative;
+}
+
+.admin-login-password-wrap input {
+  padding-right: 42px;
+}
+
+.admin-login-password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-login-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+  padding: 11px 20px !important;
+}
+
+.admin-login-install-btn {
+  margin-top: 18px;
+}
+
+/* Corrige le débordement de fond bleu marine derrière les écrans HP Resort :
+   le fallback global (html + body:has(.screen-page)/.admin-page) est navy
+   par défaut pour l'Hôtel Président — on le repasse en marron HP Resort
+   partout où .theme-hpresort est présent (questionnaire, synthèse, dashboard…). */
+body:has(.theme-hpresort),
+html:has(.theme-hpresort) {
+  background-color: #3D1F0E;
+}
+
+#root:has(.theme-hpresort) {
+  min-height: 100dvh;
+  background-color: #3D1F0E;
 }
 

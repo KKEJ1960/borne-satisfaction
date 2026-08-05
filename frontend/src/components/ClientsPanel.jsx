@@ -14,8 +14,7 @@ import {
   Loader2,
   Users,
 } from "lucide-react";
-import { API_URL } from "../config/api";
-import { authHeaders, ADMIN_AXIOS } from "../config/auth";
+import { API_URL, apiWithHotel } from "../config/api";
 
 const PAGE_SIZE = 25;
 const MAX_MESSAGE_LEN = 1500;
@@ -26,7 +25,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export default function ClientsPanel() {
+export default function ClientsPanel({ hotelId }) {
   const [view, setView] = useState("liste"); // "liste" | "historique"
 
   const [clients, setClients] = useState([]);
@@ -60,12 +59,13 @@ export default function ClientsPanel() {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(`${API_URL}/admin/clients`, {
-        ...ADMIN_AXIOS,
-        headers: authHeaders(),
-        params: { page, pageSize: PAGE_SIZE, q: search || undefined },
-        timeout: 10000,
-      });
+      const res = await axios.get(
+        `${API_URL}/admin/clients`,
+        apiWithHotel(hotelId, {
+          params: { page, pageSize: PAGE_SIZE, q: search || undefined },
+          timeout: 10000,
+        })
+      );
       setClients(res.data.clients || []);
       setTotal(res.data.total || 0);
     } catch (err) {
@@ -73,7 +73,7 @@ export default function ClientsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, hotelId]);
 
   useEffect(() => { loadClients(); }, [loadClients]);
 
@@ -89,18 +89,17 @@ export default function ClientsPanel() {
   const loadHistorique = useCallback(async () => {
     setHistoriqueLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/admin/clients/messages/historique`, {
-        ...ADMIN_AXIOS,
-        headers: authHeaders(),
-        timeout: 10000,
-      });
+      const res = await axios.get(
+        `${API_URL}/admin/clients/messages/historique`,
+        apiWithHotel(hotelId, { timeout: 10000 })
+      );
       setHistorique(res.data || []);
     } catch {
       showToast("Impossible de charger l'historique.", "error");
     } finally {
       setHistoriqueLoading(false);
     }
-  }, []);
+  }, [hotelId]);
 
   useEffect(() => {
     if (view === "historique") loadHistorique();
@@ -156,7 +155,7 @@ export default function ClientsPanel() {
           subject: composeType === "email" ? composeSubject.trim() : undefined,
           message: composeMessage,
         },
-        { ...ADMIN_AXIOS, headers: authHeaders(), timeout: 20000 }
+        apiWithHotel(hotelId, { timeout: 20000 })
       );
       setSendResults(res.data.results || []);
       const succes = (res.data.results || []).filter((r) => r.statut === "envoye").length;

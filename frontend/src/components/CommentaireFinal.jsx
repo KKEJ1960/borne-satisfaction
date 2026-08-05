@@ -3,7 +3,7 @@ import { MessageSquare } from "lucide-react";
 import ScreenLayout from "./ScreenLayout";
 import "../style.css";
 
-export default function CommentaireFinal({ onFinish }) {
+export default function CommentaireFinal({ onFinish, variant = "", headerText }) {
   const [commentaire, setCommentaire] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,7 +30,7 @@ export default function CommentaireFinal({ onFinish }) {
   };
 
   return (
-    <ScreenLayout mainClassName="comment-page">
+    <ScreenLayout mainClassName="comment-page" variant={variant} headerText={headerText}>
       <div className="comment-page-inner">
         <div className="comment-icon-wrap">
           <MessageSquare size={22} color="#ffffff" />

@@ -195,7 +195,8 @@ export function computeStats(rows) {
 
 // ── CSV ──────────────────────────────────────────────────────────────────────
 
-export function generateCSV(rows) {
+export function generateCSV(rows, meta = {}) {
+  const hotelLine = meta.hotelNom ? `Hôtel;${meta.hotelNom}\n` : "";
   const header =
     "Date;Client;Email;Téléphone;Chambre;Type de séjour;Catégorie;Note chiffrée;Appréciation;Détail des réponses;Points à améliorer\n";
   const lines = rows.map((a) => {
@@ -221,7 +222,7 @@ export function generateCSV(rows) {
     ];
     return cols.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";");
   });
-  return "﻿" + header + lines.join("\n");
+  return "﻿" + hotelLine + header + lines.join("\n");
 }
 
 // ── Excel ────────────────────────────────────────────────────────────────────
@@ -257,7 +258,8 @@ export async function generateExcel(rows, meta = {}) {
   ];
   excelHeader(recap);
 
-  recap.addRow({ k: "Hôtel Président Yamoussoukro — Rapport de satisfaction", v: "", read: "" });
+  const hotelNom = meta.hotelNom || "Hôtel";
+  recap.addRow({ k: `${hotelNom} — Rapport de satisfaction`, v: "", read: "" });
   recap.getRow(2).font = { bold: true, size: 14, color: { argb: "FF071b36" } };
   recap.getRow(2).height = 26;
 
@@ -385,7 +387,7 @@ export async function generateExcel(rows, meta = {}) {
   ];
   excelHeader(clientSheet, "FFE0F2FE");
 
-  clientSheet.addRow(["Hôtel Président — Liste complète des clients"]);
+  clientSheet.addRow([`${hotelNom} — Liste complète des clients`]);
   clientSheet.getRow(2).font = { bold: true, size: 13 };
   clientSheet.getRow(2).height = 22;
   clientSheet.addRow({});
@@ -676,8 +678,9 @@ export async function generatePDF(rows, meta = {}) {
     doc.on("error", reject);
 
     // ── Page 1 : En-tête + KPIs ───────────────────────────────────────────
-    doc.fillColor(PDF_NAVY).fontSize(22).text("Hôtel Président", { align: "center" });
-    doc.fillColor(PDF_GOLD).fontSize(11).text("Yamoussoukro — Rapport de satisfaction client", { align: "center" });
+    const hotelNom = meta.hotelNom || "Hôtel";
+    doc.fillColor(PDF_NAVY).fontSize(22).text(hotelNom, { align: "center" });
+    doc.fillColor(PDF_GOLD).fontSize(11).text("Rapport de satisfaction client", { align: "center" });
     doc.moveDown(0.3);
     doc.fillColor(PDF_MUTED).fontSize(9)
       .text(`Période : ${periodLabel(meta)}   ·   Généré le ${new Date().toLocaleString("fr-FR")}`, { align: "center" });

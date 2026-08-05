@@ -29,9 +29,9 @@ import {
   X,
   Briefcase,
   Palmtree,
+  Building2,
 } from "lucide-react";
-import { API_URL } from "../config/api";
-import { authHeaders, ADMIN_AXIOS } from "../config/auth";
+import { API_URL, apiWithHotel } from "../config/api";
 import AdminQuestionsPanel from "./AdminQuestionsPanel";
 import ClientsPanel from "./ClientsPanel";
 import { NOTE_LABELS, NOTE_COLORS, NOTE_EMOJIS } from "../constants/ratings";
@@ -186,7 +186,8 @@ function parseFilenameFromDisposition(header) {
   return m ? m[1] : null;
 }
 
-export default function Dashboard({ onBack, onQuestionsChanged }) {
+export default function Dashboard({ onBack, onQuestionsChanged, selectedHotel, onChangeHotel }) {
+  const hotelId = selectedHotel?.id;
   const [activeTab, setActiveTab] = useState("stats");
   const [filterState, setFilterState] = useState(INITIAL_FILTER);
   const [avis, setAvis] = useState([]);
@@ -212,12 +213,13 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
       try {
         if (manual) setRefreshing(true);
         setFetchError("");
-        const res = await axios.get(`${API_URL}/admin/avis`, {
-          ...ADMIN_AXIOS,
-          headers: authHeaders(),
-          params: { ...filtersToParams(filterState), _ts: Date.now() },
-          timeout: 15000,
-        });
+        const res = await axios.get(
+          `${API_URL}/admin/avis`,
+          apiWithHotel(hotelId, {
+            params: { ...filtersToParams(filterState), _ts: Date.now() },
+            timeout: 15000,
+          })
+        );
         const data = Array.isArray(res.data) ? res.data : [];
         setAvis(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
         setLastUpdate(new Date());
@@ -234,7 +236,7 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
         setRefreshing(false);
       }
     },
-    [filterState]
+    [filterState, hotelId]
   );
 
   useEffect(() => {
@@ -281,11 +283,10 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
       return;
     }
     try {
-      const res = await axios.get(`${API_URL}/admin/avis/archive/preview`, {
-        ...ADMIN_AXIOS,
-        headers: authHeaders(),
-        params: { avant_date: date },
-      });
+      const res = await axios.get(
+        `${API_URL}/admin/avis/archive/preview`,
+        apiWithHotel(hotelId, { params: { avant_date: date } })
+      );
       setArchivePreviewCount(res.data?.count ?? 0);
     } catch {
       setArchivePreviewCount(null);
@@ -299,7 +300,7 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
       const res = await axios.post(
         `${API_URL}/admin/avis/archive`,
         { avant_date: archiveDate },
-        { ...ADMIN_AXIOS, headers: authHeaders() }
+        apiWithHotel(hotelId)
       );
       showToast(`${res.data.archived} avis archivés avec succès.`);
       setArchiveModalOpen(false);
@@ -316,13 +317,14 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
   const downloadExport = async (format) => {
     setExportOpen(false);
     try {
-      const res = await axios.get(`${API_URL}/admin/export/${format}`, {
-        ...ADMIN_AXIOS,
-        headers: authHeaders(),
-        params: filtersToParams(filterState),
-        responseType: "blob",
-        timeout: 60000,
-      });
+      const res = await axios.get(
+        `${API_URL}/admin/export/${format}`,
+        apiWithHotel(hotelId, {
+          params: filtersToParams(filterState),
+          responseType: "blob",
+          timeout: 60000,
+        })
+      );
       const name =
         parseFilenameFromDisposition(res.headers["content-disposition"]) ||
         `export.${format === "excel" ? "xlsx" : format}`;
@@ -412,19 +414,27 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
     return [...cats, ...global];
   };
 
+  const hotelThemeClass = selectedHotel?.slug === "hpresort" ? " theme-hpresort" : "";
+
   if (loading) {
     return (
-      <div className="admin-page">
-        <header className="global-header">Hôtel Président Yamoussoukro</header>
+      <div className={`admin-page${hotelThemeClass}`}>
+        <header className="global-header">{selectedHotel?.nom || "Hôtel"}</header>
         <div className="admin-loading">Chargement du tableau de bord…</div>
       </div>
     );
   }
 
   return (
-    <div className="admin-page">
+    <div className={`admin-page${hotelThemeClass}`}>
       <header className="global-header admin-header">
-        <span>Hôtel Président Yamoussoukro</span>
+        <div className="admin-header-hotel-row">
+          <span>{selectedHotel?.nom || "Hôtel"}</span>
+          <button type="button" className="admin-change-hotel-btn" onClick={onChangeHotel}>
+            <Building2 size={13} />
+            Changer d'hôtel
+          </button>
+        </div>
         <p className="admin-header-sub">Tableau de bord administration</p>
       </header>
 
@@ -545,9 +555,9 @@ export default function Dashboard({ onBack, onQuestionsChanged }) {
       )}
 
       {activeTab === "questions" ? (
-        <AdminQuestionsPanel onQuestionsChanged={onQuestionsChanged} />
+        <AdminQuestionsPanel onQuestionsChanged={onQuestionsChanged} hotelId={hotelId} />
       ) : activeTab === "clients" ? (
-        <ClientsPanel />
+        <ClientsPanel hotelId={hotelId} />
       ) : (
         <>
           {filterState.archived && (

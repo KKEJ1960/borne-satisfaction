@@ -1,11 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Briefcase, Palmtree } from "lucide-react";
-import { API_URL } from "../config/api";
-import InstallAppButton from "./InstallAppButton";
-import "../style.css";
+import { API_URL } from "../../config/api";
+import InstallAppButton from "../InstallAppButton";
+import "../../style.css";
 
-export default function ClientForm({ onClientIdentified }) {
+const HOTEL_ID = 2;
+
+/**
+ * Même logique que ClientForm.jsx (Hôtel Président), adaptée pour HP Resort :
+ * hotel_id=2 injecté sur POST /client. Charte graphique HP Resort dédiée
+ * (classes hpr-*, cf. style.css) — la logique n'est pas modifiée.
+ */
+export default function ClientFormHPResort({ onClientIdentified }) {
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -66,8 +73,7 @@ export default function ClientForm({ onClientIdentified }) {
         email: emailTrim || undefined,
         numero_chambre: formData.numero_chambre.trim() || undefined,
         type_sejour: typeSejour,
-        // TODO multi-hôtel : figé à 1 (Hôtel Président) — choix hôtel côté borne client à implémenter
-        hotel_id: 1,
+        hotel_id: HOTEL_ID,
       });
       onClientIdentified({
         id: response.data.id,
@@ -85,26 +91,25 @@ export default function ClientForm({ onClientIdentified }) {
   };
 
   return (
-    <div className="client-form-hero">
-      <div className="client-form-hero-media" aria-hidden="true">
-        <div className="client-form-hero-overlay" />
+    <div className="hpr-form-hero">
+      <div className="hpr-form-hero-media" aria-hidden="true">
+        <div className="hpr-form-hero-overlay" />
+        <p className="hpr-form-hero-caption">Yamoussoukro, Côte d'Ivoire</p>
       </div>
-      <div className="client-form-hero-inner">
-        <div className="client-form-shell">
-          <div className="client-form-brand">
-            <div className="welcome-logo-wrap client-form-logo-wrap">
-              <img src="/logo-hotel.jpg" alt="Logo Hôtel Président" className="welcome-logo" />
+      <div className="hpr-form-hero-inner">
+        <div className="hpr-form-shell">
+          <div className="hpr-form-header">
+            <div className="hpr-form-icon-circle">
+              <img src="/logo-hpresort.png" alt="Logo HP Resort" className="hpr-form-logo-img" />
             </div>
-            <div>
-              <h1>Hôtel Président</h1>
-              <p className="client-subtitle">Yamoussoukro</p>
-            </div>
+            <h1 className="hpr-form-title">HP Resort</h1>
+            <p className="hpr-form-subtitle">Hôtel · Restaurant · Spa</p>
           </div>
 
           {error && <div className="message error">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="client-form-fields" noValidate autoComplete="off">
-            <div className="client-form-row">
+          <form onSubmit={handleSubmit} className="hpr-form-fields" noValidate autoComplete="off">
+            <div className="hpr-form-row">
               <div>
                 <label htmlFor="prenom">Prénom *</label>
                 <input
@@ -171,12 +176,12 @@ export default function ClientForm({ onClientIdentified }) {
                 autoComplete="off"
               />
             </div>
-            <div className="client-form-type-section">
-              <p className="client-form-type-label">Type de séjour</p>
-              <div className="client-form-type-picker">
+            <div className="hpr-form-type-section">
+              <p className="hpr-form-type-label">Type de séjour</p>
+              <div className="hpr-form-type-picker">
                 <button
                   type="button"
-                  className={`client-type-opt${typeSejour === "loisirs" ? " is-active" : ""}`}
+                  className={`hpr-type-opt${typeSejour === "loisirs" ? " is-active" : ""}`}
                   onClick={() => setTypeSejour("loisirs")}
                 >
                   <Palmtree size={15} />
@@ -184,7 +189,7 @@ export default function ClientForm({ onClientIdentified }) {
                 </button>
                 <button
                   type="button"
-                  className={`client-type-opt${typeSejour === "affaires" ? " is-active" : ""}`}
+                  className={`hpr-type-opt${typeSejour === "affaires" ? " is-active" : ""}`}
                   onClick={() => setTypeSejour("affaires")}
                 >
                   <Briefcase size={15} />
@@ -196,9 +201,9 @@ export default function ClientForm({ onClientIdentified }) {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary-compact client-form-submit"
+              className="hpr-form-submit"
             >
-              {isLoading ? "Enregistrement..." : "Inscrivez-vous"}
+              {isLoading ? "Enregistrement..." : "Commencer l'évaluation"}
             </button>
           </form>
 

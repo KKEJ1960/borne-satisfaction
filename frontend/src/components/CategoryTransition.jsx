@@ -12,6 +12,7 @@ export default function CategoryTransition({
   categoriesMeta = CATEGORIES_META,
   departements = DEPARTEMENTS,
   variant = "",
+  headerText,
 }) {
   const fromMeta = categoriesMeta[fromDept];
   const isLast = !toDept || toDept === "Commentaire";
@@ -19,7 +20,7 @@ export default function CategoryTransition({
   const skipped = type === "skip";
 
   return (
-    <ScreenLayout mainClassName="category-transition-page" variant={variant}>
+    <ScreenLayout mainClassName="category-transition-page" variant={variant} headerText={headerText}>
       <div className="category-transition-inner">
         <div className={`category-transition-card${skipped ? " is-skip" : ""}`}>
 

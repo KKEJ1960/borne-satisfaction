@@ -1,9 +1,9 @@
 /** Journalise une action dans logs_activite */
-export async function logActivity(db, { adminId = null, action, details = null, ip = null }) {
+export async function logActivity(db, { adminId = null, action, details = null, ip = null, hotelId = null }) {
   try {
     await db.query(
-      `INSERT INTO logs_activite (admin_id, action, details, ip_address) VALUES (?, ?, ?, ?)`,
-      [adminId, action, details, ip]
+      `INSERT INTO logs_activite (admin_id, action, details, ip_address, hotel_id) VALUES (?, ?, ?, ?, ?)`,
+      [adminId, action, details, ip, hotelId]
     );
   } catch (err) {
     console.error("❌ logActivity:", err.message);

@@ -97,6 +97,7 @@ export default function SynthesePage({
   client,
   departements = DEPARTEMENTS,
   variant = "",
+  headerText,
 }) {
   const [editingResponse, setEditingResponse] = useState(null);
   const [editingComment, setEditingComment] = useState(false);
@@ -218,7 +219,7 @@ export default function SynthesePage({
   };
 
   return (
-    <ScreenLayout mainClassName="synthese-page" variant={variant}>
+    <ScreenLayout mainClassName="synthese-page" variant={variant} headerText={headerText}>
       <div className="synthese-page-inner">
         <header className="synthese-header">
           <div className="synthese-header-icon">

@@ -145,6 +145,16 @@ export const CATEGORIES_META = {
 /** Toutes les catégories gérées dans le panel admin (loisirs + affaires) */
 export const ALL_ADMIN_CATEGORIES = [...DEPARTEMENTS, "Commercial"];
 
+/** Catégories admin par hôtel (multi-hôtel) — 1 = Hôtel Président, 2 = HP Resort */
+export const ADMIN_CATEGORIES_BY_HOTEL = {
+  1: ALL_ADMIN_CATEGORIES,
+  2: ["Accueil", "Chambres", "Saveurs du Monde", "4 Épices", "Poulet Chaud", "Loisirs", "Cadre", "Commercial"],
+};
+
+export function getAdminCategoriesForHotel(hotelId) {
+  return ADMIN_CATEGORIES_BY_HOTEL[hotelId] || ALL_ADMIN_CATEGORIES;
+}
+
 export function getNextCategory(currentDept) {
   const i = DEPARTEMENTS.indexOf(currentDept);
   if (i < 0 || i >= DEPARTEMENTS.length - 1) return null;
@@ -216,4 +226,93 @@ export function getNextCategoryAffaires(currentDept) {
   const i = DEPARTEMENTS_AFFAIRES.indexOf(currentDept);
   if (i < 0 || i >= DEPARTEMENTS_AFFAIRES.length - 1) return null;
   return DEPARTEMENTS_AFFAIRES[i + 1];
+}
+
+// ── Parcours HP Resort (multi-hôtel) ────────────────────────────────────────
+export const HPRESORT_CATEGORIES_LOISIRS = [
+  "Accueil",
+  "Chambres",
+  "Saveurs du Monde",
+  "4 Épices",
+  "Poulet Chaud",
+  "Loisirs",
+  "Cadre",
+];
+
+export const HPRESORT_CATEGORIES_AFFAIRES = [
+  ...HPRESORT_CATEGORIES_LOISIRS,
+  "Commercial",
+];
+
+export const HPRESORT_CATEGORIES_META = {
+  Accueil: {
+    step: 1,
+    shortName: "Accueil",
+    tagline: "Votre arrivée au resort",
+    intro: "Commençons par l'accueil !",
+    doneTitle: "Accueil noté !",
+    doneText: "Merci, passons à la suite de votre séjour.",
+  },
+  Chambres: {
+    step: 2,
+    shortName: "Chambres",
+    tagline: "Votre chambre",
+    intro: "Place à votre chambre !",
+    doneTitle: "Chambre notée !",
+    doneText: "Continuons votre évaluation.",
+  },
+  "Saveurs du Monde": {
+    step: 3,
+    shortName: "Saveurs du Monde",
+    tagline: "Restaurant Saveurs du Monde",
+    intro: "Votre expérience à Saveurs du Monde !",
+    doneTitle: "Saveurs du Monde noté !",
+    doneText: "Merci pour votre avis.",
+  },
+  "4 Épices": {
+    step: 4,
+    shortName: "4 Épices",
+    tagline: "Restaurant 4 Épices",
+    intro: "Votre expérience au 4 Épices !",
+    doneTitle: "4 Épices noté !",
+    doneText: "Encore quelques étapes.",
+  },
+  "Poulet Chaud": {
+    step: 5,
+    shortName: "Poulet Chaud",
+    tagline: "Poulet Chaud",
+    intro: "Votre expérience au Poulet Chaud !",
+    doneTitle: "Poulet Chaud noté !",
+    doneText: "Presque terminé.",
+  },
+  Loisirs: {
+    step: 6,
+    shortName: "Loisirs",
+    tagline: "Activités & détente",
+    intro: "Direction les loisirs !",
+    doneTitle: "Loisirs notés !",
+    doneText: "Dernière étape à venir.",
+  },
+  Cadre: {
+    step: 7,
+    shortName: "Cadre",
+    tagline: "Cadre général du resort",
+    intro: "Dernière étape : le cadre !",
+    doneTitle: "Cadre noté !",
+    doneText: "Merci pour votre évaluation complète.",
+  },
+  Commercial: {
+    step: 8,
+    shortName: "Commercial",
+    tagline: "Services professionnels",
+    intro: "Services & espaces professionnels.",
+    doneTitle: "Services évalués.",
+    doneText: "Toutes les catégories sont complètes.",
+  },
+};
+
+export function getNextCategoryHPResort(currentDept, categories) {
+  const i = categories.indexOf(currentDept);
+  if (i < 0 || i >= categories.length - 1) return null;
+  return categories[i + 1];
 }

@@ -4,6 +4,7 @@ import db from "../db.js";
 import { requireSuperAdmin } from "../middleware/auth.js";
 import { logActivity, clientIp } from "../utils/activityLog.js";
 import { fetchAvisRows } from "../utils/avisQuery.js";
+import { optionalHotelId } from "../utils/hotel.js";
 
 const router = Router();
 
@@ -163,18 +164,30 @@ router.get("/logs", async (req, res) => {
 
 router.get("/stats", async (req, res) => {
   try {
+    const parsed = optionalHotelId(req, res);
+    if (!parsed) return;
+    const { hotelId } = parsed;
+    const hotelParams = hotelId ? [hotelId] : [];
+
     const [[avisTotal]] = await db.query(
-      "SELECT COUNT(*) AS n FROM avis WHERE archived = 0"
+      `SELECT COUNT(*) AS n FROM avis WHERE archived = 0 ${hotelId ? "AND hotel_id = ?" : ""}`,
+      hotelParams
     );
     const [[avisToday]] = await db.query(
-      "SELECT COUNT(*) AS n FROM avis WHERE archived = 0 AND DATE(date) = CURDATE()"
+      `SELECT COUNT(*) AS n FROM avis WHERE archived = 0 AND DATE(date) = CURDATE() ${hotelId ? "AND hotel_id = ?" : ""}`,
+      hotelParams
     );
-    const [[clients]] = await db.query("SELECT COUNT(DISTINCT client_id) AS n FROM avis");
+    const [[clients]] = await db.query(
+      `SELECT COUNT(DISTINCT client_id) AS n FROM avis ${hotelId ? "WHERE hotel_id = ?" : ""}`,
+      hotelParams
+    );
+    // Les comptes admin sont globaux (non rattachés à un hôtel précis)
     const [[adminsActifs]] = await db.query(
       "SELECT COUNT(*) AS n FROM admins WHERE actif = 1"
     );
     const [[lastLog]] = await db.query(
-      "SELECT MAX(date) AS d FROM logs_activite"
+      `SELECT MAX(date) AS d FROM logs_activite ${hotelId ? "WHERE hotel_id = ?" : ""}`,
+      hotelParams
     );
 
     res.json({
@@ -183,6 +196,7 @@ router.get("/stats", async (req, res) => {
       total_clients: clients?.n ?? 0,
       admins_actifs: adminsActifs?.n ?? 0,
       derniere_activite: lastLog?.d || null,
+      hotel_id: hotelId,
     });
   } catch (error) {
     console.error("❌ GET /superadmin/stats:", error.message);
@@ -193,7 +207,9 @@ router.get("/stats", async (req, res) => {
 /** Stats satisfaction lecture seule (moyennes par catégorie) */
 router.get("/satisfaction", async (req, res) => {
   try {
-    const rows = await fetchAvisRows(db, { archived: false, ...req.query });
+    const parsed = optionalHotelId(req, res);
+    if (!parsed) return;
+    const rows = await fetchAvisRows(db, { ...req.query, archived: false, hotel_id: parsed.hotelId });
     const notes = rows.filter((a) => a.note > 0);
     const parDept = {};
     for (const a of notes) {

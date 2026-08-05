@@ -12,6 +12,16 @@ export function buildAvisFilters(query = {}) {
   conditions.push("a.archived = ?");
   params.push(archived ? 1 : 0);
 
+  let hotelId = null;
+  if (query.hotel_id != null && query.hotel_id !== "") {
+    const n = Number(query.hotel_id);
+    if ([1, 2].includes(n)) {
+      hotelId = n;
+      conditions.push("a.hotel_id = ?");
+      params.push(n);
+    }
+  }
+
   if (query.dateDebut) {
     conditions.push("DATE(a.date) >= ?");
     params.push(query.dateDebut);
@@ -52,6 +62,7 @@ export function buildAvisFilters(query = {}) {
       categorie: query.categorie || null,
       note: query.note != null && query.note !== "" ? query.note : null,
       archived,
+      hotel_id: hotelId,
     },
   };
 }
@@ -70,18 +81,18 @@ export async function fetchAvisRows(db, query = {}) {
 }
 
 /** Nombre d'avis actifs (non archivés) avant une date — preview archivage */
-export async function countAvisToArchive(db, avantDate) {
+export async function countAvisToArchive(db, avantDate, hotelId) {
   const [rows] = await db.query(
-    `SELECT COUNT(*) AS cnt FROM avis WHERE archived = 0 AND DATE(date) < ?`,
-    [avantDate]
+    `SELECT COUNT(*) AS cnt FROM avis WHERE archived = 0 AND DATE(date) < ? AND hotel_id = ?`,
+    [avantDate, hotelId]
   );
   return rows[0]?.cnt ?? 0;
 }
 
-export async function archiveAvisBefore(db, avantDate) {
+export async function archiveAvisBefore(db, avantDate, hotelId) {
   const [result] = await db.query(
-    `UPDATE avis SET archived = 1 WHERE archived = 0 AND DATE(date) < ?`,
-    [avantDate]
+    `UPDATE avis SET archived = 1 WHERE archived = 0 AND DATE(date) < ? AND hotel_id = ?`,
+    [avantDate, hotelId]
   );
   return result.affectedRows ?? 0;
 }

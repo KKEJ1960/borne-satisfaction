@@ -25,6 +25,8 @@ export default function QuestionnaireScreen({
   totalSteps = DEPARTEMENTS.length,
   departements = DEPARTEMENTS,
   showAffairesBadge = false,
+  variant = "",
+  headerText,
 }) {
   const [index, setIndex] = useState(startAtQuestion || 0);
   const [reponses, setReponses] = useState(savedReponses || []);
@@ -60,7 +62,7 @@ export default function QuestionnaireScreen({
 
   if (!hasQuestions) {
     return (
-      <ScreenLayout mainClassName="page-content">
+      <ScreenLayout mainClassName="page-content" variant={variant} headerText={headerText}>
         <div className="page-content-inner page-content-inner--questionnaire">
           <p className="q-empty-message">Aucune question configurée pour cette catégorie.</p>
           <button type="button" className="btn-skip-category" onClick={onBack}>
@@ -74,7 +76,7 @@ export default function QuestionnaireScreen({
   const questionProgress = ((index + 1) / questions.length) * 100;
 
   return (
-    <ScreenLayout mainClassName="page-content">
+    <ScreenLayout mainClassName="page-content" variant={variant} headerText={headerText}>
       <div className="page-content-inner page-content-inner--questionnaire">
         {showAffairesBadge && (
           <div className="affaires-badge">

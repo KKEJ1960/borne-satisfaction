@@ -9,9 +9,14 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, ".env") });
 
 const dbHost = (process.env.DB_HOST || "localhost").replace(/^@+/, "");
+const dbPort = Number(process.env.DB_PORT || 3306);
 const dbUser = process.env.DB_USER || "root";
 const dbPassword = process.env.DB_PASSWORD ?? "";
 const dbName = process.env.DB_NAME || "hotel_satisfaction";
+
+// TiDB Cloud (et la plupart des hébergeurs MySQL managés) exigent TLS.
+// DB_SSL=true active une connexion chiffrée (CA publique standard de Node).
+const dbSsl = process.env.DB_SSL === "true" ? { minVersion: "TLSv1.2" } : undefined;
 
 if (!dbPassword) {
   console.warn("⚠️  DB_PASSWORD est vide — connexion sans mot de passe (dev uniquement)");
@@ -21,9 +26,11 @@ if (!dbPassword) {
 // On ne remplace JAMAIS le pool par un objet factice, même si le test échoue.
 const db = mysql.createPool({
   host: dbHost,
+  port: dbPort,
   user: dbUser,
   password: dbPassword,
   database: dbName,
+  ssl: dbSsl,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 10,

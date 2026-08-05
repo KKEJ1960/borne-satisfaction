@@ -14,9 +14,8 @@ import {
   AlertTriangle,
   Hash,
 } from "lucide-react";
-import { API_URL } from "../config/api";
-import { authHeaders, ADMIN_AXIOS } from "../config/auth";
-import { ALL_ADMIN_CATEGORIES } from "../constants/ratings";
+import { API_URL, apiWithHotel } from "../config/api";
+import { getAdminCategoriesForHotel } from "../constants/ratings";
 import { withQuestionsFallback } from "../utils/questions";
 
 const MAX_TEXTE = 500;
@@ -31,17 +30,22 @@ const CATEGORY_COLORS = {
   "Cadre Général": { from: "#4a1a0a", to: "#7c2d12", dot: "#fdba74" },
   "Tourisme Affaires": { from: "#0c2340", to: "#17375e", dot: "#c9a84c" },
   Commercial: { from: "#0D0D0D", to: "#1a1a1a", dot: "#C9A84C" },
+  "Saveurs du Monde": { from: "#2a1a0a", to: "#5c3a1e", dot: "#fcd34d" },
+  "4 Épices": { from: "#3a0f0f", to: "#6a1f1f", dot: "#f87171" },
+  "Poulet Chaud": { from: "#3a2a0a", to: "#6a4a1a", dot: "#fbbf24" },
+  Loisirs: { from: "#0a3a2a", to: "#1a5c4a", dot: "#5eead4" },
+  Cadre: { from: "#1a2a4a", to: "#2e4a7c", dot: "#93c5fd" },
 };
 
-function activeForClient(all) {
+function activeForClient(all, hotelId) {
   const active = {};
-  for (const dept of ALL_ADMIN_CATEGORIES) {
+  for (const dept of getAdminCategoriesForHotel(hotelId)) {
     active[dept] = (all[dept] || []).filter((q) => q.actif !== false && q.actif !== 0);
   }
   return withQuestionsFallback(active);
 }
 
-export default function AdminQuestionsPanel({ onQuestionsChanged }) {
+export default function AdminQuestionsPanel({ onQuestionsChanged, hotelId }) {
   const [grouped, setGrouped]           = useState({});
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
@@ -64,13 +68,15 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
   const load = useCallback(async () => {
     try {
       setError("");
-      const res = await axios.get(`${API_URL}/admin/questions`, {
-        ...ADMIN_AXIOS,
-        headers: authHeaders(),
-        timeout: 10000,
-      });
+      const res = await axios.get(
+        `${API_URL}/admin/questions`,
+        apiWithHotel(hotelId, { timeout: 10000 })
+      );
       setGrouped(res.data || {});
-      onQuestionsChanged?.(activeForClient(res.data || {}));
+      // Le parcours client (App.jsx) n'est pour l'instant câblé que sur l'hôtel 1
+      // (choix hôtel côté borne client non encore implémenté) — on évite donc de
+      // resynchroniser son cache de questions depuis un autre hôtel.
+      if (hotelId === 1) onQuestionsChanged?.(activeForClient(res.data || {}, hotelId));
     } catch (err) {
       if (err.response?.status === 401) {
         setError("Session expirée. Reconnectez-vous.");
@@ -80,7 +86,7 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
     } finally {
       setLoading(false);
     }
-  }, [onQuestionsChanged]);
+  }, [onQuestionsChanged, hotelId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -116,7 +122,7 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
       return;
     }
     const ok = await run(
-      () => axios.put(`${API_URL}/admin/questions/${id}`, { texte: editText.trim() }, { ...ADMIN_AXIOS, headers: authHeaders() }),
+      () => axios.put(`${API_URL}/admin/questions/${id}`, { texte: editText.trim() }, apiWithHotel(hotelId)),
       "Question modifiée."
     );
     if (ok) {
@@ -127,14 +133,14 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
 
   const toggleActive = (q) =>
     run(
-      () => axios.put(`${API_URL}/admin/questions/${q.id}`, { actif: !q.actif }, { ...ADMIN_AXIOS, headers: authHeaders() }),
+      () => axios.put(`${API_URL}/admin/questions/${q.id}`, { actif: !q.actif }, apiWithHotel(hotelId)),
       q.actif ? "Question désactivée." : "Question activée."
     );
 
   const confirmAndDelete = async () => {
     if (!confirmDelete) return;
     const ok = await run(
-      () => axios.delete(`${API_URL}/admin/questions/${confirmDelete.id}`, { ...ADMIN_AXIOS, headers: authHeaders() }),
+      () => axios.delete(`${API_URL}/admin/questions/${confirmDelete.id}`, apiWithHotel(hotelId)),
       "Question supprimée."
     );
     if (ok) setConfirmDelete(null);
@@ -144,7 +150,7 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
     if (!newText.trim()) return;
     const maxOrdre = Math.max(-1, ...(grouped[categorie] || []).map((q) => q.ordre ?? 0));
     const ok = await run(
-      () => axios.post(`${API_URL}/admin/questions`, { categorie, texte: newText.trim(), ordre: maxOrdre + 1 }, { ...ADMIN_AXIOS, headers: authHeaders() }),
+      () => axios.post(`${API_URL}/admin/questions`, { categorie, texte: newText.trim(), ordre: maxOrdre + 1 }, apiWithHotel(hotelId)),
       "Question ajoutée."
     );
     if (ok) {
@@ -160,8 +166,8 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
     const a = list[index];
     const b = list[j];
     return run(async () => {
-      await axios.put(`${API_URL}/admin/questions/${a.id}`, { ordre: b.ordre }, { ...ADMIN_AXIOS, headers: authHeaders() });
-      await axios.put(`${API_URL}/admin/questions/${b.id}`, { ordre: a.ordre }, { ...ADMIN_AXIOS, headers: authHeaders() });
+      await axios.put(`${API_URL}/admin/questions/${a.id}`, { ordre: b.ordre }, apiWithHotel(hotelId));
+      await axios.put(`${API_URL}/admin/questions/${b.id}`, { ordre: a.ordre }, apiWithHotel(hotelId));
     });
   };
 
@@ -192,10 +198,11 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
     );
   }
 
-  const totalActive = ALL_ADMIN_CATEGORIES.reduce((sum, cat) => {
+  const categories = getAdminCategoriesForHotel(hotelId);
+  const totalActive = categories.reduce((sum, cat) => {
     return sum + (grouped[cat] || []).filter((q) => q.actif).length;
   }, 0);
-  const totalAll = ALL_ADMIN_CATEGORIES.reduce((sum, cat) => sum + (grouped[cat] || []).length, 0);
+  const totalAll = categories.reduce((sum, cat) => sum + (grouped[cat] || []).length, 0);
 
   return (
     <div className="aqp-root">
@@ -239,7 +246,7 @@ export default function AdminQuestionsPanel({ onQuestionsChanged }) {
       )}
       
       <div className="aqp-categories">
-        {ALL_ADMIN_CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const allList  = [...(grouped[cat] || [])].sort((a, b) => a.ordre - b.ordre);
           const list     = filterList(allList);
           const colors   = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Accueil;

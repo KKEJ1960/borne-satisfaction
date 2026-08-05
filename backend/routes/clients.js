@@ -4,6 +4,7 @@ import db from "../db.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { logActivity, clientIp } from "../utils/activityLog.js";
 import { sendEmail, sendSms } from "../utils/brevoClient.js";
+import { requireHotelId } from "../utils/hotel.js";
 
 const router = Router();
 
@@ -49,13 +50,18 @@ function applyPlaceholders(template, client) {
 // ── GET /admin/clients — liste + recherche + pagination ─────────────────────
 router.get("/", async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 25));
     const offset = (page - 1) * pageSize;
     const search = (req.query.q || "").trim();
 
-    const whereClause = search ? `WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ? OR c.telephone LIKE ?` : "";
-    const searchParams = search ? Array(4).fill(`%${search}%`) : [];
+    const whereClause = search
+      ? `WHERE c.hotel_id = ? AND (c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ? OR c.telephone LIKE ?)`
+      : `WHERE c.hotel_id = ?`;
+    const searchParams = search ? [hotelId, ...Array(4).fill(`%${search}%`)] : [hotelId];
 
     const [[{ total }]] = await db.query(
       `SELECT COUNT(*) AS total FROM clients c ${whereClause}`,
@@ -75,7 +81,7 @@ router.get("/", async (req, res) => {
       [...searchParams, pageSize, offset]
     );
 
-    res.json({ clients: rows, total, page, pageSize });
+    res.json({ clients: rows, total, page, pageSize, hotel_id: hotelId });
   } catch (error) {
     console.error("❌ GET /admin/clients:", error.message);
     res.status(500).json({ error: "Erreur serveur lors de la récupération des clients" });
@@ -85,15 +91,19 @@ router.get("/", async (req, res) => {
 // ── GET /admin/clients/messages/historique — derniers messages envoyés ──────
 router.get("/messages/historique", async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
     const [rows] = await db.query(
       `SELECT m.id, m.client_id, m.type, m.destinataire, m.sujet, m.statut, m.erreur, m.date_envoi,
               c.nom, c.prenom
        FROM messages_clients m
        JOIN clients c ON c.id = m.client_id
+       WHERE m.hotel_id = ?
        ORDER BY m.date_envoi DESC
        LIMIT ?`,
-      [limit]
+      [hotelId, limit]
     );
     res.json(rows);
   } catch (error) {
@@ -105,6 +115,9 @@ router.get("/messages/historique", async (req, res) => {
 // ── POST /admin/clients/message — envoi email ou SMS (1 ou plusieurs clients) ─
 router.post("/message", sendLimiter, async (req, res) => {
   try {
+    const hotelId = requireHotelId(req, res);
+    if (hotelId == null) return;
+
     const { client_ids, type, subject, message } = req.body || {};
 
     if (!Array.isArray(client_ids) || client_ids.length === 0) {
@@ -125,8 +138,8 @@ router.post("/message", sendLimiter, async (req, res) => {
 
     const ids = [...new Set(client_ids.map(Number))].filter(Number.isInteger);
     const [clientRows] = await db.query(
-      `SELECT id, nom, prenom, email, telephone FROM clients WHERE id IN (?)`,
-      [ids]
+      `SELECT id, nom, prenom, email, telephone FROM clients WHERE id IN (?) AND hotel_id = ?`,
+      [ids, hotelId]
     );
 
     const foundIds = new Set(clientRows.map((c) => c.id));
@@ -162,8 +175,8 @@ router.post("/message", sendLimiter, async (req, res) => {
       results.push({ client_id: client.id, nom: client.nom, prenom: client.prenom, statut, erreur });
 
       await db.query(
-        `INSERT INTO messages_clients (client_id, admin_id, type, destinataire, sujet, contenu, statut, erreur)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO messages_clients (client_id, admin_id, type, destinataire, sujet, contenu, statut, erreur, hotel_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           client.id,
           req.admin.adminId,
@@ -173,6 +186,7 @@ router.post("/message", sendLimiter, async (req, res) => {
           personalized,
           statut,
           erreur,
+          hotelId,
         ]
       );
     }
@@ -191,6 +205,7 @@ router.post("/message", sendLimiter, async (req, res) => {
         succes: results.filter((r) => r.statut === "envoye").length,
       }),
       ip: clientIp(req),
+      hotelId,
     });
 
     res.json({ results });
