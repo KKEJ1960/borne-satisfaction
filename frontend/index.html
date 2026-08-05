@@ -8,7 +8,37 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Hôtel Président">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/icons/president/apple-touch-icon.png">
+    <link rel="manifest" href="/manifests/president.webmanifest">
+
+    <!-- Sélection du manifest/icônes PWA selon la marque (même build, 3 identités
+         installables distinctes) : Président sur /, HP Resort sur /hpresort,
+         Administration (Hotelix) sur /admin. Doit s'exécuter avant que le
+         navigateur n'évalue l'installabilité, donc script synchrone en <head>. -->
+    <script>
+      (function () {
+        var path = window.location.pathname;
+        var brand = "president";
+        if (path.includes("/hpresort")) brand = "hpresort";
+        else if (path.includes("/admin")) brand = "admin";
+
+        if (brand === "president") return;
+
+        var manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) manifestLink.href = "/manifests/" + brand + ".webmanifest";
+
+        var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+        if (appleIcon) appleIcon.href = "/icons/" + brand + "/apple-touch-icon.png";
+
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        var themeColors = { hpresort: "#C4622D", admin: "#0a0a0a" };
+        if (themeMeta) themeMeta.setAttribute("content", themeColors[brand]);
+
+        var titleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        var titles = { hpresort: "HP Resort", admin: "Hotelix" };
+        if (titleMeta) titleMeta.setAttribute("content", titles[brand]);
+      })();
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

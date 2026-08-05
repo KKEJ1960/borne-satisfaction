@@ -1,0 +1,16 @@
+{
+  "name": "Hotelix — Administration",
+  "short_name": "Hotelix",
+  "description": "Plateforme de gestion & d'analyse — Administration Hôtel Président / HP Resort",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/admin",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icons/admin/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/admin/icon-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/admin/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

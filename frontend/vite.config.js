@@ -8,29 +8,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo-pwa.png', 'fond-hotel.jpg'],
-      manifest: {
-        name: 'Hôtel Président — Satisfaction',
-        short_name: 'Hôtel Président',
-        description: 'Borne de satisfaction client — Hôtel Président Yamoussoukro',
-        theme_color: '#0a1f3d',
-        background_color: '#0a1f3d',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
-        lang: 'fr',
-        icons: [
-          { src: 'icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-        ]
-      },
+      // 3 identités distinctes (Président / HP Resort / Admin) partagent la même
+      // build : chacune a son propre manifest.webmanifest statique dans public/manifests/,
+      // sélectionné dynamiquement selon la route par le script inline dans index.html.
+      // On désactive donc la génération/injection automatique du manifest par le plugin.
+      manifest: false,
+      includeAssets: ['logo-pwa.png', 'fond-hotel.jpg', 'manifests/*.webmanifest', 'icons/**/*.png'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2,webmanifest}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/borne-satisfaction-production\.up\.railway\.app\/.*/i,
+            urlPattern: /^https:\/\/borne-satisfaction-backend\.onrender\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

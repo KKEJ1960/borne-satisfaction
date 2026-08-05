@@ -1,0 +1,17 @@
+{
+  "name": "Hôtel Président — Satisfaction",
+  "short_name": "Hôtel Président",
+  "description": "Borne de satisfaction client — Hôtel Président Yamoussoukro",
+  "theme_color": "#0a1f3d",
+  "background_color": "#0a1f3d",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icons/president/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/president/icon-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/president/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

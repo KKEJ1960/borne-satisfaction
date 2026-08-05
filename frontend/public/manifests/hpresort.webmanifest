@@ -1,0 +1,17 @@
+{
+  "name": "HP Resort — Satisfaction",
+  "short_name": "HP Resort",
+  "description": "Borne de satisfaction client — HP Resort",
+  "theme_color": "#C4622D",
+  "background_color": "#3D1F0E",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/hpresort",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icons/hpresort/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/hpresort/icon-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/hpresort/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
