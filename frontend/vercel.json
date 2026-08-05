@@ -1,5 +1,10 @@
 {
+  "cleanUrls": true,
   "rewrites": [
+    { "source": "/hpresort", "destination": "/hpresort.html" },
+    { "source": "/hpresort/(.*)", "destination": "/hpresort.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/(.*)", "destination": "/admin.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
